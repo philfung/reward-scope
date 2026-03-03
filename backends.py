@@ -132,7 +132,7 @@ class GeminiBackend(VLMBackend):
 # ---------------------------------------------------------------------------
 
 class QwenVLBackend(VLMBackend):
-    """Local Qwen2.5-VL / Qwen3-VL backend via HuggingFace transformers.
+    """Local Qwen3-VL / Qwen2.5-VL backend via HuggingFace transformers.
 
     Per the paper (Section 3.1 and ablation 5.4), NOT using a chat template
     gives the best TOPReward results — 0.947 VOC vs ~0.500 with chat template.
@@ -147,25 +147,33 @@ class QwenVLBackend(VLMBackend):
     Recommended hardware: GPU with ≥16 GB VRAM (fp16/bf16).
     """
 
-    # Qwen2.5-VL raw vision placeholder (one per image in the text string)
+    # Qwen3-VL / Qwen2.5-VL raw vision placeholder (one per image in the text string)
     _IMAGE_PLACEHOLDER = "<|vision_start|><|image_pad|><|vision_end|>"
 
     def __init__(
         self,
-        model_name: str = "Qwen/Qwen2.5-VL-7B-Instruct",
+        model_name: str = "Qwen/Qwen3-VL-8B-Instruct",
         device: str = "auto",
         use_chat_template: bool = False,
         torch_dtype: str = "auto",
     ):
         import torch
-        from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
+        from transformers import AutoProcessor
+
+        if "Qwen3" in model_name:
+            try:
+                from transformers import Qwen3VLForConditionalGeneration as ModelClass
+            except ImportError:
+                from transformers import Qwen2_5_VLForConditionalGeneration as ModelClass
+        else:
+            from transformers import Qwen2_5_VLForConditionalGeneration as ModelClass
 
         self.model_name = model_name
         self.use_chat_template = use_chat_template
 
         print(f"Loading {model_name} …")
         self._processor = AutoProcessor.from_pretrained(model_name)
-        self._model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+        self._model = ModelClass.from_pretrained(
             model_name,
             torch_dtype=torch_dtype,
             device_map=device,
@@ -346,7 +354,7 @@ def make_backend(
         model:   Model name/ID override.
                  Gemini default:  "gemini-2.5-flash"
                  OpenAI default:  "gpt-4o-mini"
-                 Qwen default:    "Qwen/Qwen2.5-VL-7B-Instruct"
+                 Qwen default:    "Qwen/Qwen3-VL-8B-Instruct"
         api_key:        Google API key (Gemini only).
         openai_api_key: OpenAI API key (OpenAI only).
         use_chat_template: Qwen only. Default False matches paper's best results.
@@ -357,7 +365,7 @@ def make_backend(
         return OpenAIBackend(model=model or "gpt-4o-mini", api_key=openai_api_key)
     elif backend == "qwen":
         return QwenVLBackend(
-            model_name=model or "Qwen/Qwen2.5-VL-7B-Instruct",
+            model_name=model or "Qwen/Qwen3-VL-8B-Instruct",
             use_chat_template=use_chat_template,
         )
     else:

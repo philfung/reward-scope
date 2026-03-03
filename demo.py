@@ -21,7 +21,7 @@ Gemini-specific:
     --api-key      KEY        or set GOOGLE_API_KEY env var
 
 Qwen-specific:
-    --model        Qwen/Qwen2.5-VL-7B-Instruct  (default)
+    --model        Qwen/Qwen3-VL-8B-Instruct  (default)
     --use-chat-template       add chat template (hurts TOPReward per paper §5.4)
 """
 
@@ -58,7 +58,7 @@ def _backend_label(args) -> str:
         return f"Gemini ({args.model or 'gemini-2.5-flash'})"
     if args.backend == "openai":
         return f"OpenAI ({args.model or 'gpt-4o-mini'})"
-    model_short = (args.model or "Qwen2.5-VL-7B").split("/")[-1]
+    model_short = (args.model or "Qwen3-VL-8B").split("/")[-1]
     tmpl = "+chat" if getattr(args, "use_chat_template", False) else "no-chat"
     return f"Qwen ({model_short}, {tmpl})"
 
@@ -268,7 +268,7 @@ def main():
         help=(
             "Model override. "
             "Gemini default: gemini-2.5-flash  "
-            "Qwen default: Qwen/Qwen2.5-VL-7B-Instruct"
+            "Qwen default: Qwen/Qwen3-VL-8B-Instruct"
         ),
     )
 
