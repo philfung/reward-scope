@@ -13,7 +13,7 @@ import random
 import numpy as np
 from scipy.stats import spearmanr
 
-from topreward import extract_frames
+from reward_functions.topreward import extract_frames
 
 def build_gvl_prompt(instruction: str, num_frames: int) -> str:
     """Build the GVL scoring prompt.

@@ -51,7 +51,7 @@ def _backend_label(args) -> str:
 # ---------------------------------------------------------------------------
 
 def run_topreward(args, backend):
-    from topreward import compute_topreward
+    from reward_functions.topreward import compute_topreward
 
     print(f"\n{'='*60}")
     print(f"TOPReward  [{_backend_label(args)}]")
@@ -78,7 +78,7 @@ def run_topreward(args, backend):
 
 
 def run_gvl(args, backend):
-    from gvl import compute_gvl
+    from reward_functions.gvl import compute_gvl
 
     print(f"\n{'='*60}")
     print(f"GVL  [{_backend_label(args)}]")
@@ -208,7 +208,7 @@ def main():
     print(f"Summary  [{backend_label}]")
     print(f"{'='*60}")
     if top_result:
-        from gvl import compute_voc
+        from reward_functions.gvl import compute_voc
         print(f"  TOPReward VOC: {compute_voc(top_result['normalized_progress']):.4f}")
     if gvl_result:
         print(f"  GVL VOC:       {gvl_result['voc']:.4f}")
