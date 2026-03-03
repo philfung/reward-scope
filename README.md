@@ -1,10 +1,12 @@
-# RewardScope
-Compare VLM-based robot reward functions on your own manipulation videos.
+# RewardScope 🎛️
+Visually compare VLM-based robot reward functions on your own manipulation videos.
 
-Current reward functions:
+Reward functions:
 - [TOPReward](https://topreward.github.io/webpage/) — from "TOPReward: Token Probabilities as Hidden Zero-Shot Rewards for Robotics", UW & AllenAI
 - [Generative Value Learning (GVL)](https://arxiv.org/pdf/2411.04549) — from "Vision Language Models are In-Context Value Learners", Google DeepMind
 - Brute Force — at each frame, sends the video up to that point to the VLM and asks for a progress score between 0.0 and 1.0
+
+.. and easy to add more!
 
 ## Installation
 

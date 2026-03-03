@@ -129,21 +129,13 @@
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
 
-/* ── Scan viewer_files/ for .mp4/.json pairs ── */
+/* ── Scan viewer_files/ for .mp4/.json pairs via manifest.json ── */
 async function scanPairs() {
-  const res = await fetch('viewer_files/');
-  if (!res.ok) throw new Error(`HTTP ${res.status} fetching viewer_files/ — is the server running?`);
-  const html = await res.text();
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-  const hrefs = Array.from(doc.querySelectorAll('a[href]'))
-    .map(a => a.getAttribute('href'))
-    .filter(h => h && !h.startsWith('?') && !h.endsWith('/') && h !== '../');
+  const res = await fetch('viewer_files/manifest.json');
+  if (!res.ok) throw new Error(`HTTP ${res.status} fetching viewer_files/manifest.json`);
+  const bases = await res.json(); // expected: array of base names, e.g. ["run1", "run2"]
 
-  const mp4Bases = new Set(hrefs.filter(h => /\.mp4$/i.test(h)).map(h => h.replace(/\.mp4$/i, '')));
-  const jsonBases = new Set(hrefs.filter(h => /\.json$/i.test(h)).map(h => h.replace(/\.json$/i, '')));
-
-  const pairs = [...mp4Bases]
-    .filter(base => jsonBases.has(base))
+  const pairs = [...bases]
     .sort()
     .map(base => ({ name: base, mp4: `viewer_files/${base}.mp4`, json: `viewer_files/${base}.json` }));
 
@@ -417,8 +409,8 @@ function App() {
             {error}
           </div>
           <p className="panel-subtitle">
-            Put paired files in <code>viewer_files/</code>, e.g.:<br />
-            <code>viewer_files/run1.mp4</code> &amp; <code>viewer_files/run1.json</code><br /><br />
+            Put paired files in <code>viewer_files/</code> and create a manifest:<br />
+            <code>viewer_files/manifest.json</code> → <code>["run1", "run2"]</code><br /><br />
             Generate JSON with:<br />
             <code>python run_rewards.py --video … --instruction "…" --save-json viewer_files/run1.json</code>
           </p>
