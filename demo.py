@@ -12,16 +12,12 @@ Usage — Qwen backend (local, best results per paper):
 
 Common flags:
     --num-frames   N          frames to sample (default 10)
-    --method       both|topreward|gvl
+    --method       topreward,gvl  comma-separated list of methods (default: all)
     --model        override model name/ID for either backend
     --save-json    path.json  save results for viewer.html
 
 Gemini-specific:
     --api-key      KEY        or set GOOGLE_API_KEY env var
-
-Qwen-specific:
-    --model        Qwen/Qwen3-VL-8B-Instruct  (default)
-    --use-chat-template       add chat template (hurts TOPReward per paper §5.4)
 """
 
 import argparse
@@ -44,7 +40,6 @@ def _make_backend(args):
         model=args.model or None,
         api_key=getattr(args, "api_key", None),
         openai_api_key=getattr(args, "openai_api_key", None),
-        use_chat_template=getattr(args, "use_chat_template", False),
     )
 
 
@@ -55,8 +50,7 @@ def _backend_label(args) -> str:
     if args.backend == "openai":
         return f"OpenAI ({args.model or 'gpt-4o-mini'})"
     model_short = (args.model or "Qwen3-VL-8B").split("/")[-1]
-    tmpl = "+chat" if getattr(args, "use_chat_template", False) else "no-chat"
-    return f"Qwen ({model_short}, {tmpl})"
+    return f"Qwen ({model_short})"
 
 
 # ---------------------------------------------------------------------------
@@ -139,7 +133,6 @@ def save_json(top_result, gvl_result, args, backend_label, path):
         }
     with open(path, "w") as f:
         json.dump(data, f, indent=2)
-    print(f"\nResults saved to: {path}")
 
 
 # ---------------------------------------------------------------------------
@@ -158,22 +151,21 @@ def main():
                         help='Task instruction, e.g. "Pick up the cube"')
     parser.add_argument("--num-frames", type=int, default=NUM_FRAMES_DEFAULT,
                         help="Frames to sample (default: %d)" % NUM_FRAMES_DEFAULT)
-    parser.add_argument("--method", choices=["both", "topreward", "gvl"], default="both",
-                        help="Which method(s) to run (default: both)")
-    parser.add_argument("--save-json", default=None,
-                        help="Save results as JSON (for viewer.html)")
+    parser.add_argument("--method", default="topreward,gvl",
+                        help="Comma-separated list of methods to run: topreward,gvl (default: all)")
+    parser.add_argument("--save-json", default=None, nargs="?", const="auto",
+                        help="Save results as JSON (for viewer.html). Defaults to viewer_files/<video>.json")
 
     # Backend selection
     backend_group = parser.add_argument_group("backend")
     backend_group.add_argument(
-        "--backend", choices=["gemini", "openai", "qwen"], default="gemini",
+        "--backend", choices=["gemini", "openai", "qwen"], default="qwen",
         help='VLM backend: "gemini" (default), "openai", or "qwen" (local GPU)',
     )
     backend_group.add_argument(
         "--model", default=None,
         help=(
             "Model override. "
-            "Gemini default: gemini-2.5-flash  "
             "Qwen default: Qwen/Qwen3-VL-8B-Instruct"
         ),
     )
@@ -187,17 +179,6 @@ def main():
     openai_group = parser.add_argument_group("OpenAI options")
     openai_group.add_argument("--openai-api-key", default=None,
                                help="OpenAI API key (or set OPENAI_API_KEY)")
-
-    # Qwen-specific
-    qwen_group = parser.add_argument_group("Qwen options")
-    qwen_group.add_argument(
-        "--use-chat-template", action="store_true",
-        help=(
-            "Wrap prompt in chat template. "
-            "Default: off (raw mode). "
-            "Note: chat template degrades TOPReward VOC by ~47%% per paper §5.4."
-        ),
-    )
 
     args = parser.parse_args()
 
@@ -222,16 +203,23 @@ def main():
             )
             sys.exit(1)
 
+    methods = [m.strip() for m in args.method.split(",")]
+    valid_methods = {"topreward", "gvl"}
+    unknown = set(methods) - valid_methods
+    if unknown:
+        print(f"Error: unknown method(s): {', '.join(sorted(unknown))}. Choose from: {', '.join(sorted(valid_methods))}", file=sys.stderr)
+        sys.exit(1)
+
     backend = _make_backend(args)
     backend_label = _backend_label(args)
 
     top_result = None
     gvl_result = None
 
-    if args.method in ("both", "topreward"):
+    if "topreward" in methods:
         top_result = run_topreward(args, backend)
 
-    if args.method in ("both", "gvl"):
+    if "gvl" in methods:
         gvl_result = run_gvl(args, backend)
 
     # Summary
@@ -245,8 +233,21 @@ def main():
         print(f"  GVL VOC:       {gvl_result['voc']:.4f}")
 
     # JSON export
-    if args.save_json:
-        save_json(top_result, gvl_result, args, backend_label, args.save_json)
+    import shutil
+    os.makedirs("viewer_files", exist_ok=True)
+    json_path = args.save_json
+    if json_path is None or json_path == "auto":
+        video_stem = os.path.splitext(os.path.basename(args.video))[0]
+        json_path = os.path.join("viewer_files", video_stem + ".json")
+    save_json(top_result, gvl_result, args, backend_label, json_path)
+    print(f"\nJSON saved to: {json_path}")
+
+    # Copy video into viewer_files/
+    viewer_dir = os.path.dirname(json_path)
+    video_dest = os.path.join(viewer_dir, os.path.basename(args.video))
+    if os.path.abspath(args.video) != os.path.abspath(video_dest):
+        shutil.copy2(args.video, video_dest)
+        print(f"Video copied to: {video_dest}")
 
 
 if __name__ == "__main__":

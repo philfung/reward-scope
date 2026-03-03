@@ -37,6 +37,9 @@ def build_gvl_prompt(instruction: str, num_frames: int) -> str:
     )
 
 
+# ** GVL: ALWAYS KEEP CHAT TEMPLATE (use_chat_template=True) **
+# ** GVL relies on text generation; chat template is required.  **
+
 def compute_gvl(
     video_path: str,
     instruction: str,
@@ -46,7 +49,6 @@ def compute_gvl(
     backend_name: str = "gemini",
     model: str | None = None,
     api_key: str | None = None,
-    use_chat_template: bool = False,
     verbose: bool = True,
 ) -> dict:
     """Compute GVL progress estimates for a video trajectory.
@@ -55,16 +57,15 @@ def compute_gvl(
     JSON scores, and unshuffles to get chronological progress values.
 
     Args:
-        video_path:        Path to the video file.
-        instruction:       Task instruction.
-        num_frames:        Number of frames to sample.
-        backend:           A VLMBackend instance. If None, one is created from
-                           backend_name / model / api_key / use_chat_template.
-        backend_name:      "gemini" or "qwen" (used when backend is None).
-        model:             Model name override.
-        api_key:           API key for Gemini backend.
-        use_chat_template: For Qwen backend only.
-        verbose:           Print intermediate output.
+        video_path:   Path to the video file.
+        instruction:  Task instruction.
+        num_frames:   Number of frames to sample.
+        backend:      A VLMBackend instance. If None, one is created from
+                      backend_name / model / api_key.
+        backend_name: "gemini" or "qwen" (used when backend is None).
+        model:        Model name override.
+        api_key:      API key for Gemini backend.
+        verbose:      Print intermediate output.
 
     Returns:
         {
@@ -79,7 +80,7 @@ def compute_gvl(
             backend_name,
             model=model,
             api_key=api_key,
-            use_chat_template=use_chat_template,
+            use_chat_template=True,  # always on for GVL (see comment above)
         )
 
     frames = extract_frames(video_path, num_frames)

@@ -47,6 +47,9 @@ def build_prompt(instruction: str) -> str:
     )
 
 
+# ** TOPREWARD: ALWAYS REMOVE CHAT TEMPLATE (use_chat_template=False) **
+# ** Chat template degrades TOPReward VOC by ~47% per paper §5.4.      **
+
 def compute_topreward(
     video_path: str,
     instruction: str,
@@ -56,7 +59,6 @@ def compute_topreward(
     backend_name: str = "gemini",
     model: str | None = None,
     api_key: str | None = None,
-    use_chat_template: bool = False,
     verbose: bool = True,
 ) -> dict:
     """Compute TOPReward progress estimates for a video trajectory.
@@ -66,17 +68,15 @@ def compute_topreward(
     log P("True") is extracted from the first generated token's logits.
 
     Args:
-        video_path:        Path to the video file.
-        instruction:       Task instruction (e.g. "Pick up the cube").
-        num_frames:        Number of prefix endpoints K (default 10).
-        backend:           A VLMBackend instance. If None, one is created from
-                           backend_name / model / api_key / use_chat_template.
-        backend_name:      "gemini" or "qwen" (used when backend is None).
-        model:             Model name override for the backend.
-        api_key:           API key for Gemini backend.
-        use_chat_template: For Qwen backend. Default False matches the paper's
-                           best-performing configuration (Section 5.4).
-        verbose:           Print per-frame progress.
+        video_path:   Path to the video file.
+        instruction:  Task instruction (e.g. "Pick up the cube").
+        num_frames:   Number of prefix endpoints K (default 10).
+        backend:      A VLMBackend instance. If None, one is created from
+                      backend_name / model / api_key.
+        backend_name: "gemini" or "qwen" (used when backend is None).
+        model:        Model name override for the backend.
+        api_key:      API key for Gemini backend.
+        verbose:      Print per-frame progress.
 
     Returns:
         {
@@ -92,7 +92,7 @@ def compute_topreward(
             backend_name,
             model=model,
             api_key=api_key,
-            use_chat_template=use_chat_template,
+            use_chat_template=False,  # always off for TOPReward (see comment above)
         )
 
     frames = extract_frames(video_path, num_frames)
