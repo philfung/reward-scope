@@ -208,23 +208,10 @@ function buildChart(canvas, data) {
       borderWidth: 2.5, pointRadius: 4, pointHoverRadius: 6,
       pointBackgroundColor: '#E8734A', tension: 0, fill: true, spanGaps: false,
     });
-    if (data.topreward.raw_log_probs) {
-      datasets.push({
-        label: 'TOPReward raw log P(True)',
-        _full: makePoints(data.topreward.raw_log_probs),
-        data: [],
-        yAxisID: 'yRight',
-        borderColor: 'rgba(232,115,74,0.45)', backgroundColor: 'transparent',
-        borderWidth: 1.5, pointRadius: 3, pointHoverRadius: 5,
-        pointBackgroundColor: 'rgba(232,115,74,0.45)',
-        borderDash: [3, 3], tension: 0, fill: false, spanGaps: false,
-      });
-    }
   }
   if (data.gvl) {
-    const voc = data.gvl.voc != null ? ` (VOC ${data.gvl.voc.toFixed(3)})` : '';
     datasets.push({
-      label: `GVL${voc}`,
+      label: `GVL`,
       _full: makePoints(data.gvl.progress_scores),
       data: [],
       yAxisID: 'y',
@@ -261,14 +248,7 @@ function buildChart(canvas, data) {
           grid: { color: 'rgba(255,255,255,0.05)' },
           border: { color: 'rgba(255,255,255,0.10)' },
         },
-        yRight: {
-          type: 'linear',
-          position: 'right',
-          title: { display: true, text: 'log P(True)', color: 'rgba(232,115,74,0.5)', font: { size: 11 } },
-          ticks: { color: 'rgba(232,115,74,0.45)', maxTicksLimit: 6 },
-          grid: { drawOnChartArea: false },
-          border: { color: 'rgba(232,115,74,0.2)' },
-        },
+
       },
       plugins: {
         legend: { labels: { color: '#c0c0e0', font: { size: 13 }, usePointStyle: true, padding: 16 } },
@@ -340,6 +320,15 @@ function App() {
     setActivePair(null);
     setPhase('select');
   };
+
+  /* Auto-play video when a pair is loaded */
+  useEffect(() => {
+    if (!activePair || !videoRef.current) return;
+    const video = videoRef.current;
+    const play = () => video.play().catch(() => {});
+    video.addEventListener('canplay', play, { once: true });
+    return () => video.removeEventListener('canplay', play);
+  }, [activePair]);
 
   /* Build/rebuild chart when data arrives */
   useEffect(() => {

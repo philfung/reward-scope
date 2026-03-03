@@ -10,12 +10,10 @@ Backend-agnostic: pass any VLMBackend from backends.py.
 
 import json
 import random
-import time
 import numpy as np
 from scipy.stats import spearmanr
 
 from topreward import extract_frames
-from constants import GVL_GENERATE_TIMEOUT_SECS, NUM_FRAMES_DEFAULT
 
 def build_gvl_prompt(instruction: str, num_frames: int) -> str:
     """Build the GVL scoring prompt.
@@ -43,7 +41,7 @@ def build_gvl_prompt(instruction: str, num_frames: int) -> str:
 def compute_gvl(
     video_path: str,
     instruction: str,
-    num_frames: int = NUM_FRAMES_DEFAULT,
+    num_frames: int = 10,
     backend=None,
     # Convenience params — used to create a backend when none is supplied
     backend_name: str = "qwen",
@@ -103,7 +101,6 @@ def compute_gvl(
     label_prefix = "\n".join(f"{label} (see image {i+1})" for i, (label, _) in enumerate(labeled_frames))
     full_prompt = label_prefix + "\n\n" + prompt_text
 
-    time.sleep(GVL_GENERATE_TIMEOUT_SECS)
     raw_text = backend.generate(all_frames, full_prompt)
 
     if verbose:

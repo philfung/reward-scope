@@ -22,7 +22,6 @@ import os
 import sys
 import time
 
-from constants import TOPREWARD_LOGPROB_TIMEOUT_SECS, NUM_FRAMES_DEFAULT
 
 
 # ---------------------------------------------------------------------------
@@ -143,8 +142,8 @@ def main():
                         help="Path to video file (mp4, avi, …)")
     parser.add_argument("--instruction", required=True,
                         help='Task instruction, e.g. "Pick up the cube"')
-    parser.add_argument("--num-frames", type=int, default=NUM_FRAMES_DEFAULT,
-                        help="Frames to sample (default: %d)" % NUM_FRAMES_DEFAULT)
+    parser.add_argument("--num-frames", type=int, default=10,
+                        help="Frames to sample (default: 10)")
     parser.add_argument("--method", default="topreward,gvl",
                         help="Comma-separated list of methods to run: topreward,gvl (default: all)")
     parser.add_argument("--save-json", default=None, nargs="?", const="auto",
@@ -234,3 +233,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# To view results, run: ./run_viewer.sh
