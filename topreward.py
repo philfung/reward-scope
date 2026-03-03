@@ -56,9 +56,8 @@ def compute_topreward(
     num_frames: int = NUM_FRAMES_DEFAULT,
     backend=None,
     # Convenience params — used to create a backend when none is supplied
-    backend_name: str = "gemini",
+    backend_name: str = "qwen",
     model: str | None = None,
-    api_key: str | None = None,
     verbose: bool = True,
 ) -> dict:
     """Compute TOPReward progress estimates for a video trajectory.
@@ -72,10 +71,9 @@ def compute_topreward(
         instruction:  Task instruction (e.g. "Pick up the cube").
         num_frames:   Number of prefix endpoints K (default 10).
         backend:      A VLMBackend instance. If None, one is created from
-                      backend_name / model / api_key.
-        backend_name: "gemini" or "qwen" (used when backend is None).
+                      backend_name / model.
+        backend_name: "qwen" or "openai" (used when backend is None).
         model:        Model name override for the backend.
-        api_key:      API key for Gemini backend.
         verbose:      Print per-frame progress.
 
     Returns:
@@ -91,7 +89,6 @@ def compute_topreward(
         backend = make_backend(
             backend_name,
             model=model,
-            api_key=api_key,
             use_chat_template=False,  # always off for TOPReward (see comment above)
         )
 

@@ -2,11 +2,10 @@
 VLM backends for TOPReward and GVL.
 
 Two backends are supported:
-  gemini  — Google Gemini API via google-genai SDK.
-              Easy setup, requires an API key.
   qwen    — Qwen2.5-VL / Qwen3-VL running locally via HuggingFace transformers.
               Best TOPReward results per the paper (Table 1/2), requires GPU
               with ~16 GB VRAM.
+  openai  — OpenAI Chat Completions API with vision and logprobs support.
 
 Both expose the same two methods used by topreward.py and gvl.py:
   log_prob_true(frames, prompt_text) -> float   # log P("True")
@@ -65,66 +64,6 @@ class VLMBackend(ABC):
     @abstractmethod
     def generate(self, frames: list[np.ndarray], prompt_text: str, max_tokens: int = 512) -> str:
         """Generate free-form text given video frames and a prompt."""
-
-
-# ---------------------------------------------------------------------------
-# Gemini backend
-# ---------------------------------------------------------------------------
-
-class GeminiBackend(VLMBackend):
-    """Google Gemini API backend (google-genai SDK).
-
-    Uses response_logprobs=True to extract log P("True") at the first
-    generated token position.
-
-    Note: Gemini enforces a chat template on all requests, which the paper
-    (Section 5.4) shows reduces TOPReward VOC. GVL actually performs better
-    on Gemini than open-source models (Table 1).
-    """
-
-    def __init__(self, model: str = "gemini-2.5-flash", api_key: str | None = None):
-        from google import genai
-        self.model = model
-        self._client = genai.Client(api_key=api_key) if api_key else genai.Client()
-
-    def _parts(self, frames: list[np.ndarray]):
-        from google.genai import types
-        return [
-            types.Part(inline_data=types.Blob(data=_frame_to_jpeg_bytes(f), mime_type="image/jpeg"))
-            for f in frames
-        ]
-
-    def log_prob_true(self, frames: list[np.ndarray], prompt_text: str) -> float:
-        from google.genai import types
-
-        content = types.Content(parts=self._parts(frames) + [types.Part(text=prompt_text)])
-        response = self._client.models.generate_content(
-            model=self.model,
-            contents=content,
-            config=types.GenerateContentConfig(
-                max_output_tokens=1,
-                temperature=0.0,
-                response_logprobs=True,
-                logprobs=20,
-            ),
-        )
-        result = response.candidates[0].logprobs_result
-        if result and result.top_candidates:
-            for cand in result.top_candidates[0].candidates:
-                if cand.token.strip().lower() == "true":
-                    return cand.log_probability
-        return -20.0  # "True" not in top-k
-
-    def generate(self, frames: list[np.ndarray], prompt_text: str, max_tokens: int = 512) -> str:
-        from google.genai import types
-
-        content = types.Content(parts=self._parts(frames) + [types.Part(text=prompt_text)])
-        response = self._client.models.generate_content(
-            model=self.model,
-            contents=content,
-            config=types.GenerateContentConfig(max_output_tokens=max_tokens, temperature=0.0),
-        )
-        return response.text.strip()
 
 
 # ---------------------------------------------------------------------------
@@ -350,18 +289,14 @@ def make_backend(
     """Create a VLMBackend by name.
 
     Args:
-        backend: "gemini", "openai", or "qwen".
+        backend: "openai" or "qwen".
         model:   Model name/ID override.
-                 Gemini default:  "gemini-2.5-flash"
                  OpenAI default:  "gpt-4o-mini"
                  Qwen default:    "Qwen/Qwen3-VL-8B-Instruct"
-        api_key:        Google API key (Gemini only).
         openai_api_key: OpenAI API key (OpenAI only).
         use_chat_template: Qwen only. Default False matches paper's best results.
     """
-    if backend == "gemini":
-        return GeminiBackend(model=model or "gemini-2.5-flash", api_key=api_key)
-    elif backend == "openai":
+    if backend == "openai":
         return OpenAIBackend(model=model or "gpt-4o-mini", api_key=openai_api_key)
     elif backend == "qwen":
         return QwenVLBackend(
@@ -369,4 +304,4 @@ def make_backend(
             use_chat_template=use_chat_template,
         )
     else:
-        raise ValueError(f"Unknown backend {backend!r}. Choose 'gemini', 'openai', or 'qwen'.")
+        raise ValueError(f"Unknown backend {backend!r}. Choose 'openai' or 'qwen'.")

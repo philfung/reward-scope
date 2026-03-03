@@ -46,9 +46,8 @@ def compute_gvl(
     num_frames: int = NUM_FRAMES_DEFAULT,
     backend=None,
     # Convenience params — used to create a backend when none is supplied
-    backend_name: str = "gemini",
+    backend_name: str = "qwen",
     model: str | None = None,
-    api_key: str | None = None,
     verbose: bool = True,
 ) -> dict:
     """Compute GVL progress estimates for a video trajectory.
@@ -61,10 +60,9 @@ def compute_gvl(
         instruction:  Task instruction.
         num_frames:   Number of frames to sample.
         backend:      A VLMBackend instance. If None, one is created from
-                      backend_name / model / api_key.
-        backend_name: "gemini" or "qwen" (used when backend is None).
+                      backend_name / model.
+        backend_name: "qwen" or "openai" (used when backend is None).
         model:        Model name override.
-        api_key:      API key for Gemini backend.
         verbose:      Print intermediate output.
 
     Returns:
@@ -79,7 +77,6 @@ def compute_gvl(
         backend = make_backend(
             backend_name,
             model=model,
-            api_key=api_key,
             use_chat_template=True,  # always on for GVL (see comment above)
         )
 

@@ -2,22 +2,19 @@
 """
 Demo: Run TOPReward and GVL on a video and save results for the viewer.
 
-Usage — Gemini backend (default):
-    export GOOGLE_API_KEY="your-key"
+Usage — Qwen backend (local, best results per paper):
     python demo.py --video robot.mp4 --instruction "Pick up the cube"
 
-Usage — Qwen backend (local, best results per paper):
-    python demo.py --video robot.mp4 --instruction "Fold the towel" \\
-                   --backend qwen
+Usage — OpenAI backend:
+    export OPENAI_API_KEY="your-key"
+    python demo.py --video robot.mp4 --instruction "Pick up the cube" \\
+                   --backend openai
 
 Common flags:
     --num-frames   N          frames to sample (default 10)
     --method       topreward,gvl  comma-separated list of methods (default: all)
     --model        override model name/ID for either backend
     --save-json    path.json  save results for viewer.html
-
-Gemini-specific:
-    --api-key      KEY        or set GOOGLE_API_KEY env var
 """
 
 import argparse
@@ -38,15 +35,12 @@ def _make_backend(args):
     return make_backend(
         backend=args.backend,
         model=args.model or None,
-        api_key=getattr(args, "api_key", None),
         openai_api_key=getattr(args, "openai_api_key", None),
     )
 
 
 def _backend_label(args) -> str:
     """Short label for plot titles / summary."""
-    if args.backend == "gemini":
-        return f"Gemini ({args.model or 'gemini-2.5-flash'})"
     if args.backend == "openai":
         return f"OpenAI ({args.model or 'gpt-4o-mini'})"
     model_short = (args.model or "Qwen3-VL-8B").split("/")[-1]
@@ -159,21 +153,17 @@ def main():
     # Backend selection
     backend_group = parser.add_argument_group("backend")
     backend_group.add_argument(
-        "--backend", choices=["gemini", "openai", "qwen"], default="qwen",
-        help='VLM backend: "gemini" (default), "openai", or "qwen" (local GPU)',
+        "--backend", choices=["openai", "qwen"], default="qwen",
+        help='VLM backend: "qwen" (default, local GPU) or "openai"',
     )
     backend_group.add_argument(
         "--model", default=None,
         help=(
             "Model override. "
-            "Qwen default: Qwen/Qwen3-VL-8B-Instruct"
+            "Qwen default: Qwen/Qwen3-VL-8B-Instruct  "
+            "OpenAI default: gpt-4o-mini"
         ),
     )
-
-    # Gemini-specific
-    gemini_group = parser.add_argument_group("Gemini options")
-    gemini_group.add_argument("--api-key", default=None,
-                               help="Google API key (or set GOOGLE_API_KEY)")
 
     # OpenAI-specific
     openai_group = parser.add_argument_group("OpenAI options")
@@ -186,14 +176,6 @@ def main():
     if not os.path.exists(args.video):
         print(f"Error: video not found: {args.video}", file=sys.stderr)
         sys.exit(1)
-
-    if args.backend == "gemini":
-        if not args.api_key and not os.environ.get("GOOGLE_API_KEY"):
-            print(
-                "Error: Gemini backend requires --api-key or GOOGLE_API_KEY env var.",
-                file=sys.stderr,
-            )
-            sys.exit(1)
 
     if args.backend == "openai":
         if not args.openai_api_key and not os.environ.get("OPENAI_API_KEY"):
