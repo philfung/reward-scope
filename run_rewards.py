@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
-Demo: Run TOPReward and GVL on a video and save results for the viewer.
+RewardScope: Run and compare VLM-based robot reward functions on a video.
 
 Usage — Qwen backend (local, best results per paper):
-    python demo.py --video robot.mp4 --instruction "Pick up the cube"
+    python run_rewards.py --video robot.mp4 --instruction "Pick up the cube"
 
 Usage — OpenAI backend:
     export OPENAI_API_KEY="your-key"
-    python demo.py --video robot.mp4 --instruction "Pick up the cube" \\
-                   --backend openai
+    python run_rewards.py --video robot.mp4 --instruction "Pick up the cube" \\
+                          --backend openai
 
 Common flags:
-    --num-frames   N          frames to sample (default 10)
-    --method       topreward,gvl  comma-separated list of methods (default: all)
+    --num-frames   N                              frames to sample (default 10)
+    --method       topreward,gvl,bruteforce_vlm   comma-separated list of methods (default: all)
     --model        override model name/ID for either backend
-    --save-json    path.json  save results for viewer.html
+    --save-json    path.json                      save results for viewer.html
 """
 
 import argparse
@@ -77,6 +77,33 @@ def run_topreward(args, backend):
     return result
 
 
+def run_bruteforce_vlm(args, backend):
+    from reward_functions.bruteforce_vlm import compute_bruteforce_vlm
+
+    print(f"\n{'='*60}")
+    print(f"BruteforceVLM  [{_backend_label(args)}]")
+    print(f"{'='*60}")
+    print(f"  Video:       {args.video}")
+    print(f'  Instruction: "{args.instruction}"')
+    print(f"  Frames:      {args.num_frames}")
+    print()
+
+    start = time.time()
+    result = compute_bruteforce_vlm(
+        video_path=args.video,
+        instruction=args.instruction,
+        num_frames=args.num_frames,
+        backend=backend,
+        verbose=True,
+    )
+    elapsed = time.time() - start
+
+    print(f"\n  Done in {elapsed:.1f}s")
+    print(f"  Progress: {[f'{v:.3f}' for v in result['progress_scores']]}")
+    print(f"  VOC:      {result['voc']:.4f}")
+    return result
+
+
 def run_gvl(args, backend):
     from reward_functions.gvl import compute_gvl
 
@@ -105,7 +132,7 @@ def run_gvl(args, backend):
 
 
 
-def save_json(top_result, gvl_result, args, backend_label, path):
+def save_json(top_result, gvl_result, bruteforce_result, args, backend_label, path):
     """Save results as JSON for the viewer.html visualiser."""
     import json
     data = {
@@ -124,6 +151,12 @@ def save_json(top_result, gvl_result, args, backend_label, path):
             "progress_scores": gvl_result["progress_scores"],
             "voc": gvl_result["voc"],
         }
+    if bruteforce_result:
+        data["bruteforce_vlm"] = {
+            "progress_scores": bruteforce_result["progress_scores"],
+            "dense_rewards": bruteforce_result["dense_rewards"],
+            "voc": bruteforce_result["voc"],
+        }
     with open(path, "w") as f:
         json.dump(data, f, indent=2)
 
@@ -134,7 +167,7 @@ def save_json(top_result, gvl_result, args, backend_label, path):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="TOPReward & GVL Demo — estimate task progress from video",
+        description="RewardScope — compare VLM-based robot reward functions on a video",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
@@ -144,8 +177,8 @@ def main():
                         help='Task instruction, e.g. "Pick up the cube"')
     parser.add_argument("--num-frames", type=int, default=10,
                         help="Frames to sample (default: 10)")
-    parser.add_argument("--method", default="topreward,gvl",
-                        help="Comma-separated list of methods to run: topreward,gvl (default: all)")
+    parser.add_argument("--method", default="topreward,gvl,bruteforce_vlm",
+                        help="Comma-separated list of methods to run: topreward,gvl,bruteforce_vlm (default: all)")
     parser.add_argument("--save-json", default=None, nargs="?", const="auto",
                         help="Save results as JSON (for viewer.html). Defaults to viewer_files/<video>.json")
 
@@ -185,7 +218,7 @@ def main():
             sys.exit(1)
 
     methods = [m.strip() for m in args.method.split(",")]
-    valid_methods = {"topreward", "gvl"}
+    valid_methods = {"topreward", "gvl", "bruteforce_vlm"}
     unknown = set(methods) - valid_methods
     if unknown:
         print(f"Error: unknown method(s): {', '.join(sorted(unknown))}. Choose from: {', '.join(sorted(valid_methods))}", file=sys.stderr)
@@ -196,6 +229,7 @@ def main():
 
     top_result = None
     gvl_result = None
+    bruteforce_result = None
 
     if "topreward" in methods:
         top_result = run_topreward(args, backend)
@@ -203,15 +237,20 @@ def main():
     if "gvl" in methods:
         gvl_result = run_gvl(args, backend)
 
+    if "bruteforce_vlm" in methods:
+        bruteforce_result = run_bruteforce_vlm(args, backend)
+
     # Summary
     print(f"\n{'='*60}")
     print(f"Summary  [{backend_label}]")
     print(f"{'='*60}")
     if top_result:
         from reward_functions.gvl import compute_voc
-        print(f"  TOPReward VOC: {compute_voc(top_result['normalized_progress']):.4f}")
+        print(f"  TOPReward VOC:      {compute_voc(top_result['normalized_progress']):.4f}")
     if gvl_result:
-        print(f"  GVL VOC:       {gvl_result['voc']:.4f}")
+        print(f"  GVL VOC:            {gvl_result['voc']:.4f}")
+    if bruteforce_result:
+        print(f"  BruteforceVLM VOC:  {bruteforce_result['voc']:.4f}")
 
     # JSON export
     import shutil
@@ -220,7 +259,7 @@ def main():
     if json_path is None or json_path == "auto":
         video_stem = os.path.splitext(os.path.basename(args.video))[0]
         json_path = os.path.join("viewer_files", video_stem + ".json")
-    save_json(top_result, gvl_result, args, backend_label, json_path)
+    save_json(top_result, gvl_result, bruteforce_result, args, backend_label, json_path)
     print(f"\nJSON saved to: {json_path}")
 
     # Copy video into viewer_files/
@@ -229,6 +268,8 @@ def main():
     if os.path.abspath(args.video) != os.path.abspath(video_dest):
         shutil.copy2(args.video, video_dest)
         print(f"Video copied to: {video_dest}")
+
+    print("\nRun ./run_viewer.sh to view results in your browser.")
 
 
 if __name__ == "__main__":

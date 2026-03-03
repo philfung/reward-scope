@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TOPReward vs GVL Viewer</title>
+  <title>RewardScope Viewer</title>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -99,6 +99,7 @@
     }
     .pair-chip.orange { color: #c06040; border-color: rgba(232,115,74,0.3); background: rgba(232,115,74,0.08); }
     .pair-chip.blue   { color: #4070a0; border-color: rgba(74,144,217,0.3);  background: rgba(74,144,217,0.08); }
+    .pair-chip.green  { color: #40a070; border-color: rgba(74,200,140,0.3);  background: rgba(74,200,140,0.08); }
 
     /* ── Main viewer ── */
     .main-view { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -152,7 +153,7 @@ async function scanPairs() {
       const r = await fetch(p.json);
       const d = await r.json();
       return { ...p, instruction: d.instruction || null, backend: d.backend || null,
-               hasTopreward: !!d.topreward, hasGvl: !!d.gvl };
+               hasTopreward: !!d.topreward, hasGvl: !!d.gvl, hasBruteforce: !!d.bruteforce_vlm };
     } catch { return p; }
   }));
 }
@@ -218,6 +219,18 @@ function buildChart(canvas, data) {
       borderColor: '#4A90D9', backgroundColor: 'rgba(74,144,217,0.08)',
       borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
       pointBackgroundColor: '#4A90D9', borderDash: [6, 3],
+      tension: 0, fill: true, spanGaps: false,
+    });
+  }
+  if (data.bruteforce_vlm) {
+    datasets.push({
+      label: 'BruteforceVLM',
+      _full: makePoints(data.bruteforce_vlm.progress_scores),
+      data: [],
+      yAxisID: 'y',
+      borderColor: '#4AC48A', backgroundColor: 'rgba(74,196,138,0.07)',
+      borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
+      pointBackgroundColor: '#4AC48A', borderDash: [3, 3],
       tension: 0, fill: true, spanGaps: false,
     });
   }
@@ -379,7 +392,7 @@ function App() {
   return (
     <>
       <div className="header">
-        <h1>TOPReward vs GVL</h1>
+        <h1>RewardScope</h1>
         <span className="header-badge">Reward Visualiser</span>
         {activePair && data?.instruction && (
           <span className="header-sub">"{data.instruction}"</span>
@@ -407,7 +420,7 @@ function App() {
             Put paired files in <code>viewer_files/</code>, e.g.:<br />
             <code>viewer_files/run1.mp4</code> &amp; <code>viewer_files/run1.json</code><br /><br />
             Generate JSON with:<br />
-            <code>python demo.py --video … --instruction "…" --save-json viewer_files/run1.json</code>
+            <code>python run_rewards.py --video … --instruction "…" --save-json viewer_files/run1.json</code>
           </p>
           {pairs.length > 0 && (
             <button className="back-btn" style={{ position: 'static', marginTop: 8 }}
@@ -430,9 +443,10 @@ function App() {
                   <div className="pair-instruction">"{pair.instruction}"</div>
                 )}
                 <div className="pair-meta">
-                  {pair.hasTopreward && <span className="pair-chip orange">TOPReward</span>}
-                  {pair.hasGvl       && <span className="pair-chip blue">GVL</span>}
-                  {pair.backend      && <span className="pair-chip">{pair.backend}</span>}
+                  {pair.hasTopreward  && <span className="pair-chip orange">TOPReward</span>}
+                  {pair.hasGvl        && <span className="pair-chip blue">GVL</span>}
+                  {pair.hasBruteforce && <span className="pair-chip green">BruteforceVLM</span>}
+                  {pair.backend       && <span className="pair-chip">{pair.backend}</span>}
                 </div>
               </div>
             ))}

@@ -1,47 +1,44 @@
-## installation
+# RewardScope
+A tool for running and comparing VLM-based robot reward functions from different papers.
 
-### core (Gemini backend)
+Current reward functions:
+- [TOPReward](https://topreward.github.io/webpage/) — UW & AllenAI
+- [GVL](https://arxiv.org/pdf/2411.04549) — "Vision Language Models are In-Context Value Learners", Google DeepMind
+- BruteforceVLM — direct per-frame progress estimation via text generation
+
+## Installation
+
+### Install Python packages
 ```
 virtualenv venv
 . venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Qwen backend (local, best results)
+### Install Qwen backend (local, best results)
 Requires ~15 GB disk (model weights) and ~16 GB unified/GPU memory.
 ```
 pip install torch torchvision transformers accelerate
 ```
 
-## usage
-
-### Gemini backend
+## Usage
+Take your video of robot manipulation and run reward functions on it:
 ```
-export GOOGLE_API_KEY="your-key"
-python demo.py --video files/pickupcube.mp4 --instruction "Pick up the cube"
+python run_rewards.py --video stackcubes2_480p_qwen.mp4 --instruction "create a tower of 5 cubes"
 ```
 
-### OpenAI backend
+Run a specific subset of methods:
+```
+python run_rewards.py --video robot.mp4 --instruction "Pick up the cube" --method topreward,gvl
+```
+
+Use the OpenAI backend instead of local Qwen:
 ```
 export OPENAI_API_KEY="your-key"
-python demo.py --video viewer_files/stackcubes2_480p.mp4 --instruction "Stack all 5 cubes on top of each other" --backend qwen --save-json viewer_files/stackcubes2_480p_qwen.json
+python run_rewards.py --video robot.mp4 --instruction "Pick up the cube" --backend openai
 ```
 
-
-### Qwen backend (Apple Silicon / CUDA)
+Now view the results in your browser:
 ```
-python demo.py --video files/pickupcube.mp4 --instruction "Pick up the cube" --backend qwen
-```
-
-First run downloads Qwen2.5-VL-7B-Instruct (~15 GB) from HuggingFace.
-Use `--model Qwen/Qwen2.5-VL-3B-Instruct` if memory is tight.
-
-### options
-```
---method      both|topreward|gvl   which method(s) to run (default: both)
---num-frames  N                    frames to sample (default: 10)
---model       NAME                 override model name/ID
---combined-plot                    overlay both methods on one chart
---save-plot   path.png             save plot instead of displaying
---use-chat-template                add chat template for Qwen (hurts TOPReward per paper §5.4)
+./run_viewer.sh
 ```

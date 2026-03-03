@@ -1,5 +1,5 @@
 """
-VLM backends for TOPReward and GVL.
+VLM backends for RewardScope.
 
 Two backends are supported:
   qwen    — Qwen2.5-VL / Qwen3-VL running locally via HuggingFace transformers.
@@ -7,7 +7,7 @@ Two backends are supported:
               with ~16 GB VRAM.
   openai  — OpenAI Chat Completions API with vision and logprobs support.
 
-Both expose the same two methods used by topreward.py and gvl.py:
+Both expose the same two methods used by all reward functions:
   log_prob_true(frames, prompt_text) -> float   # log P("True")
   generate(frames, prompt_text, max_tokens) -> str
 """
