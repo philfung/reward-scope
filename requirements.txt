@@ -1,5 +1,15 @@
+# Core (always needed)
 google-genai
 opencv-python
 matplotlib
 scipy
 numpy
+Pillow
+
+# Qwen backend (only needed for --backend qwen)
+# Requires GPU with ~16 GB VRAM
+# transformers>=4.45
+# torch>=2.0
+# torchvision
+# accelerate
+# qwen-vl-utils

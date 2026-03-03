@@ -4,29 +4,28 @@ GVL: Generative Value Learning (Ma et al., 2024)
 Baseline implementation. GVL casts progress estimation as visual
 question-answering: given shuffled trajectory frames, the VLM is prompted
 to assign per-frame progress scores from 0 to 1.
+
+Backend-agnostic: pass any VLMBackend from backends.py.
 """
 
 import json
 import random
 import numpy as np
 from scipy.stats import spearmanr
-from google import genai
-from google.genai import types
 
-from topreward import extract_frames, frame_to_part
+from topreward import extract_frames
 
 
-def build_gvl_prompt(instruction: str, num_frames: int, shuffled_order: list[int]) -> str:
-    """Build the GVL prompt asking the model to score each shuffled frame.
+def build_gvl_prompt(instruction: str, num_frames: int) -> str:
+    """Build the GVL scoring prompt.
 
-    The prompt presents numbered images in a shuffled order and asks the VLM
-    to assign a progress score (0.0 to 1.0) to each, based on how close
-    the frame is to completing the task.
+    Presents numbered (shuffled) images and asks the VLM to assign a
+    progress score (0.0–1.0) to each.
     """
     frame_labels = ", ".join(f"Image {i + 1}" for i in range(num_frames))
     return (
         f"You are given {num_frames} images from a robot manipulation trajectory "
-        f"for the task: \"{instruction}\". "
+        f'for the task: "{instruction}". '
         f"The images are presented in a SHUFFLED order (not chronological). "
         f"The images are labeled: {frame_labels}.\n\n"
         f"For each image, estimate how much progress the robot has made toward "
@@ -41,86 +40,83 @@ def compute_gvl(
     video_path: str,
     instruction: str,
     num_frames: int = 10,
-    model: str = "gemini-2.5-flash",
+    backend=None,
+    # Convenience params — used to create a backend when none is supplied
+    backend_name: str = "gemini",
+    model: str | None = None,
     api_key: str | None = None,
+    use_chat_template: bool = False,
     verbose: bool = True,
 ) -> dict:
     """Compute GVL progress estimates for a video trajectory.
 
-    Shuffles frames, sends them to the VLM with a prompt asking for
-    per-frame progress scores, then unshuffles to get temporal ordering.
+    Shuffles frames, sends them with a scoring prompt to the VLM, parses the
+    JSON scores, and unshuffles to get chronological progress values.
 
     Args:
-        video_path: Path to the video file.
-        instruction: Task instruction.
-        num_frames: Number of frames to sample.
-        model: Gemini model ID.
-        api_key: Google API key. If None, uses GOOGLE_API_KEY env var.
-        verbose: Print progress during computation.
+        video_path:        Path to the video file.
+        instruction:       Task instruction.
+        num_frames:        Number of frames to sample.
+        backend:           A VLMBackend instance. If None, one is created from
+                           backend_name / model / api_key / use_chat_template.
+        backend_name:      "gemini" or "qwen" (used when backend is None).
+        model:             Model name override.
+        api_key:           API key for Gemini backend.
+        use_chat_template: For Qwen backend only.
+        verbose:           Print intermediate output.
 
     Returns:
-        Dictionary with keys:
-            progress_scores: list of progress scores in chronological order
-            voc: Value-Order Correlation (Spearman's rho)
-            raw_response: the raw model text response
+        {
+            progress_scores: list[float]  — chronological progress (0–1)
+            voc:             float        — Value-Order Correlation (Spearman)
+            raw_response:    str          — raw model text output
+        }
     """
-    if api_key:
-        client = genai.Client(api_key=api_key)
-    else:
-        client = genai.Client()
+    if backend is None:
+        from backends import make_backend
+        backend = make_backend(
+            backend_name,
+            model=model,
+            api_key=api_key,
+            use_chat_template=use_chat_template,
+        )
 
     frames = extract_frames(video_path, num_frames)
-    all_parts = [frame_to_part(f) for f in frames]
 
-    # Create shuffled ordering
-    original_indices = list(range(num_frames))
-    shuffled_indices = original_indices.copy()
+    # Shuffle frame ordering
+    shuffled_indices = list(range(num_frames))
     random.shuffle(shuffled_indices)
 
-    # Build content with shuffled frames
-    shuffled_parts = []
-    for i, shuf_idx in enumerate(shuffled_indices):
-        shuffled_parts.append(types.Part(text=f"Image {i + 1}:"))
-        shuffled_parts.append(all_parts[shuf_idx])
+    # Build a single interleaved list: "Image N:" label then the frame
+    # The backend.generate() call sends all of them at once.
+    labeled_frames = []
+    for display_pos, orig_idx in enumerate(shuffled_indices):
+        labeled_frames.append((f"Image {display_pos + 1}:", frames[orig_idx]))
 
-    prompt_text = build_gvl_prompt(instruction, num_frames, shuffled_indices)
-    shuffled_parts.append(types.Part(text=prompt_text))
-
-    content = types.Content(parts=shuffled_parts)
+    prompt_text = build_gvl_prompt(instruction, num_frames)
 
     if verbose:
-        print("  Querying VLM for GVL progress scores...")
+        print("  Querying VLM for GVL progress scores…")
 
-    response = client.models.generate_content(
-        model=model,
-        contents=content,
-        config=types.GenerateContentConfig(
-            temperature=0.0,
-            max_output_tokens=512,
-        ),
-    )
+    # Flatten to (label, frame, label, frame, …, prompt) — backends receive
+    # frames as a list; we encode the labels into the prompt instead.
+    all_frames = [f for _, f in labeled_frames]
+    label_prefix = "\n".join(f"{label} (see image {i+1})" for i, (label, _) in enumerate(labeled_frames))
+    full_prompt = label_prefix + "\n\n" + prompt_text
 
-    raw_text = response.text.strip()
+    raw_text = backend.generate(all_frames, full_prompt)
+
     if verbose:
-        print(f"  Raw response: {raw_text[:200]}")
+        print(f"  Raw response: {raw_text[:300]}")
 
-    # Parse JSON response
     scores_by_shuffled = _parse_scores(raw_text, num_frames)
 
     # Unshuffle: map scores back to chronological order
     chronological_scores = [0.0] * num_frames
-    for shuffled_pos, original_idx in enumerate(shuffled_indices):
-        chronological_scores[original_idx] = scores_by_shuffled[shuffled_pos]
+    for shuffled_pos, orig_idx in enumerate(shuffled_indices):
+        chronological_scores[orig_idx] = scores_by_shuffled[shuffled_pos]
 
-    # Compute VOC (Eq. 4): Spearman rank correlation between
-    # chronological order and predicted values
-    if len(set(chronological_scores)) > 1:
-        voc, _ = spearmanr(
-            list(range(num_frames)),
-            chronological_scores,
-        )
-    else:
-        voc = 0.0
+    voc = compute_voc(chronological_scores)
 
     return {
         "progress_scores": chronological_scores,
@@ -130,26 +126,18 @@ def compute_gvl(
 
 
 def _parse_scores(text: str, num_frames: int) -> list[float]:
-    """Parse GVL JSON response into a list of scores (in shuffled order)."""
-    # Strip markdown code fences if present
+    """Parse a GVL JSON response into a list of scores (in shuffled order)."""
     text = text.strip()
+    # Strip markdown code fences if present
     if text.startswith("```"):
-        lines = text.split("\n")
-        # Remove first and last lines (fences)
-        lines = [l for l in lines if not l.strip().startswith("```")]
+        lines = [l for l in text.split("\n") if not l.strip().startswith("```")]
         text = "\n".join(lines)
-
     try:
         data = json.loads(text)
-        scores = []
-        for i in range(num_frames):
-            key = f"Image {i + 1}"
-            scores.append(float(data.get(key, 0.0)))
-        return scores
+        return [float(data.get(f"Image {i + 1}", 0.0)) for i in range(num_frames)]
     except (json.JSONDecodeError, ValueError):
-        # Fallback: try to extract numbers in order
         import re
-        numbers = re.findall(r"(\d+\.?\d*)", text)
+        numbers = re.findall(r"\d+\.?\d*", text)
         scores = [float(n) for n in numbers[:num_frames]]
         while len(scores) < num_frames:
             scores.append(0.0)
@@ -159,8 +147,7 @@ def _parse_scores(text: str, num_frames: int) -> list[float]:
 def compute_voc(predicted: list[float], ground_truth_order: list[int] | None = None) -> float:
     """Compute Value-Order Correlation (Eq. 4).
 
-    VOC = Spearman rank correlation between chronological order
-    and predicted progress values.
+    Spearman rank correlation between chronological order and predicted values.
     """
     n = len(predicted)
     if ground_truth_order is None:

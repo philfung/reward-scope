@@ -4,12 +4,12 @@ TOPReward: Token Probabilities as Hidden Zero-Shot Rewards for Robotics
 Implements the TOPReward method from Chen et al. (2026).
 Uses VLM token probabilities (specifically P("True")) as a reward signal
 for estimating robotic task progress, bypassing text generation entirely.
+
+Backend-agnostic: pass any VLMBackend from backends.py.
 """
 
 import math
 import numpy as np
-from google import genai
-from google.genai import types
 
 
 def extract_frames(video_path: str, num_frames: int) -> list[np.ndarray]:
@@ -32,26 +32,12 @@ def extract_frames(video_path: str, num_frames: int) -> list[np.ndarray]:
     return frames
 
 
-def frame_to_part(frame: np.ndarray) -> types.Part:
-    """Convert an OpenCV BGR frame to a Gemini inline image Part."""
-    import cv2
-
-    _, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
-    return types.Part(
-        inline_data=types.Blob(data=buf.tobytes(), mime_type="image/jpeg")
-    )
-
-
 def build_prompt(instruction: str) -> str:
-    """Build the TOPReward prompt (Section 3.1 of paper).
+    """Build the TOPReward completion query (Section 3.1 of paper).
 
-    Prompt structure:
-        "The above images show a robot manipulation trajectory that completes
-         the following task: {INSTRUCTION}. Decide whether the above statement
-         is True or not. The answer is:"
-
-    The model's log-probability of generating "True" as the next token
-    becomes the reward signal.
+    The model is asked to judge whether the observed trajectory completes
+    the instruction. We then read off log P("True") from its token logits
+    rather than parsing generated text.
     """
     return (
         "The above images show a robot manipulation trajectory that completes "
@@ -60,105 +46,76 @@ def build_prompt(instruction: str) -> str:
     )
 
 
-def compute_log_prob_true(
-    client: genai.Client,
-    model: str,
-    frame_parts: list[types.Part],
-    prompt_text: str,
-) -> float:
-    """Query Gemini and extract log P("True") from the first generated token.
-
-    Returns the log probability of the "True" token. If "True" is not among
-    the top candidates, returns a large negative value as fallback.
-    """
-    content = types.Content(
-        parts=frame_parts + [types.Part(text=prompt_text)]
-    )
-
-    response = client.models.generate_content(
-        model=model,
-        contents=content,
-        config=types.GenerateContentConfig(
-            max_output_tokens=1,
-            temperature=0.0,
-            response_logprobs=True,
-            logprobs=20,
-        ),
-    )
-
-    # Search for "True" in top candidates at the first token position
-    logprobs_result = response.candidates[0].logprobs_result
-    if logprobs_result and logprobs_result.top_candidates:
-        for candidate in logprobs_result.top_candidates[0].candidates:
-            if candidate.token.strip().lower() == "true":
-                return candidate.log_probability
-
-    # Fallback: "True" not in top-k, use a very negative log prob
-    return -20.0
-
-
 def compute_topreward(
     video_path: str,
     instruction: str,
     num_frames: int = 10,
-    model: str = "gemini-2.5-flash",
+    backend=None,
+    # Convenience params — used to create a backend when none is supplied
+    backend_name: str = "gemini",
+    model: str | None = None,
     api_key: str | None = None,
+    use_chat_template: bool = False,
     verbose: bool = True,
 ) -> dict:
     """Compute TOPReward progress estimates for a video trajectory.
 
-    Implements prefix sampling (Section 3.2): for each prefix length k,
-    we feed frames 1..k to the VLM and measure log P("True").
+    Implements prefix sampling (Section 3.2): for each of K uniformly spaced
+    prefix lengths, the video frames 1..k are fed to the VLM and
+    log P("True") is extracted from the first generated token's logits.
 
     Args:
-        video_path: Path to the video file.
-        instruction: Task instruction (e.g. "Pick up the cube").
-        num_frames: Number of uniformly sampled prefix endpoints (K).
-        model: Gemini model ID.
-        api_key: Google API key. If None, uses GOOGLE_API_KEY env var.
-        verbose: Print progress during computation.
+        video_path:        Path to the video file.
+        instruction:       Task instruction (e.g. "Pick up the cube").
+        num_frames:        Number of prefix endpoints K (default 10).
+        backend:           A VLMBackend instance. If None, one is created from
+                           backend_name / model / api_key / use_chat_template.
+        backend_name:      "gemini" or "qwen" (used when backend is None).
+        model:             Model name override for the backend.
+        api_key:           API key for Gemini backend.
+        use_chat_template: For Qwen backend. Default False matches the paper's
+                           best-performing configuration (Section 5.4).
+        verbose:           Print per-frame progress.
 
     Returns:
-        Dictionary with keys:
-            raw_log_probs: list of raw log P("True") per prefix
-            normalized_progress: list of min-max normalized progress [0,1]
-            dense_rewards: list of per-step dense rewards (Eq. 3)
-            frame_indices: list of prefix endpoint indices (0-based)
+        {
+            raw_log_probs:       list[float]  — log P("True") per prefix
+            normalized_progress: list[float]  — min-max normalised to [0, 1]
+            dense_rewards:       list[float]  — per-step dense rewards (Eq. 3)
+            frame_indices:       list[int]    — 0-based prefix endpoint indices
+        }
     """
-    if api_key:
-        client = genai.Client(api_key=api_key)
-    else:
-        client = genai.Client()
+    if backend is None:
+        from backends import make_backend
+        backend = make_backend(
+            backend_name,
+            model=model,
+            api_key=api_key,
+            use_chat_template=use_chat_template,
+        )
 
     frames = extract_frames(video_path, num_frames)
-    all_parts = [frame_to_part(f) for f in frames]
     prompt_text = build_prompt(instruction)
 
-    # Prefix sampling: evaluate on prefixes [1..1], [1..2], ..., [1..K]
+    # Prefix sampling: evaluate on prefixes [1..1], [1..2], …, [1..K]
     raw_log_probs = []
     for k in range(1, len(frames) + 1):
-        prefix_parts = all_parts[:k]
-        lp = compute_log_prob_true(client, model, prefix_parts, prompt_text)
+        lp = backend.log_prob_true(frames[:k], prompt_text)
         raw_log_probs.append(lp)
         if verbose:
             print(f"  Frame {k}/{len(frames)}: log P(True) = {lp:.4f}")
 
-    # Min-max normalization (Eq. 2)
+    # Min-max normalisation (Eq. 2)
     raw = np.array(raw_log_probs)
     eps = 1e-8
-    r_min, r_max = raw.min(), raw.max()
-    normalized = (raw - r_min) / (r_max - r_min + eps)
+    normalized = (raw - raw.min()) / (raw.max() - raw.min() + eps)
 
-    # Dense rewards (Eq. 3) with tau=2.0, delta_max=2.0
+    # Dense per-step rewards (Eq. 3): tau=2.0, delta_max=2.0
     tau, delta_max = 2.0, 2.0
-    dense = []
-    for k in range(len(normalized)):
-        if k == 0:
-            dense.append(1.0)  # No previous step to compare
-        else:
-            diff = normalized[k] - normalized[k - 1]
-            reward = np.clip(tau * math.exp(diff), 0.0, delta_max)
-            dense.append(float(reward))
+    dense = [1.0]  # first step has no previous frame to compare
+    for k in range(1, len(normalized)):
+        diff = normalized[k] - normalized[k - 1]
+        dense.append(float(np.clip(tau * math.exp(diff), 0.0, delta_max)))
 
     return {
         "raw_log_probs": raw_log_probs,
