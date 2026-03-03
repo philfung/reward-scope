@@ -1,6 +1,6 @@
 #!/bin/bash
 PORT=8080
 echo ""
-echo "Starting viewer at http://localhost:$PORT/viewer.html"
+echo "Starting viewer at http://localhost:$PORT"
 echo ""
 python3 -m http.server $PORT --quiet 2>/dev/null || python3 -m http.server $PORT
