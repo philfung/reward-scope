@@ -262,6 +262,21 @@ def main():
     save_json(top_result, gvl_result, bruteforce_result, args, backend_label, json_path)
     print(f"\nJSON saved to: {json_path}")
 
+    # Update manifest.json
+    import json
+    manifest_path = os.path.join("viewer_files", "manifest.json")
+    video_stem = os.path.splitext(os.path.basename(args.video))[0]
+    if os.path.exists(manifest_path):
+        with open(manifest_path) as f:
+            manifest = json.load(f)
+    else:
+        manifest = []
+    if video_stem not in manifest:
+        manifest.append(video_stem)
+        with open(manifest_path, "w") as f:
+            json.dump(manifest, f, indent=2)
+        print(f"manifest.json updated: added '{video_stem}'")
+
     # Copy video into viewer_files/
     viewer_dir = os.path.dirname(json_path)
     video_dest = os.path.join(viewer_dir, os.path.basename(args.video))
