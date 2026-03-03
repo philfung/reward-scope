@@ -24,8 +24,7 @@ python demo.py --video files/pickupcube.mp4 --instruction "Pick up the cube"
 ### OpenAI backend
 ```
 export OPENAI_API_KEY="your-key"
-python demo.py --video files/pickupcube480p.mp4 --instruction "Pick up the cube" --backend openai --model gpt-4o-mini --save-json results.json
-python demo.py --video viewer_files/stackcubes2_480p.mp4 --instruction "Stack all 5 cubes on top of each other" --backend openai --model gpt-4o --save-json viewer_files/stackcubes2_480p.json
+python demo.py --video viewer_files/stackcubes2_480p.mp4 --instruction "Stack all 5 cubes on top of each other" --backend qwen --save-json viewer_files/stackcubes2_480p_qwen.json
 ```
 
 

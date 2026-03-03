@@ -109,9 +109,9 @@ def compute_gvl(
     raw_text = backend.generate(all_frames, full_prompt)
 
     if verbose:
-        print(f"  Raw response: {raw_text[:300]}")
+        print(f"  Raw response:\n{raw_text}")
 
-    scores_by_shuffled = _parse_scores(raw_text, num_frames)
+    scores_by_shuffled = _parse_scores(raw_text, num_frames, verbose=verbose)
 
     # Unshuffle: map scores back to chronological order
     chronological_scores = [0.0] * num_frames
@@ -127,23 +127,42 @@ def compute_gvl(
     }
 
 
-def _parse_scores(text: str, num_frames: int) -> list[float]:
+def _parse_scores(text: str, num_frames: int, verbose: bool = False) -> list[float]:
     """Parse a GVL JSON response into a list of scores (in shuffled order)."""
-    text = text.strip()
-    # Strip markdown code fences if present
-    if text.startswith("```"):
-        lines = [l for l in text.split("\n") if not l.strip().startswith("```")]
-        text = "\n".join(lines)
+    import re
+
+    # Strip all markdown code fences (anywhere in text, not just at start)
+    clean = re.sub(r"```[a-zA-Z]*\n?", "", text).strip()
+
+    def _extract_from_dict(d: dict) -> list[float]:
+        return [float(d.get(f"Image {i + 1}", 0.0)) for i in range(num_frames)]
+
+    # 1. Try parsing the cleaned text directly
     try:
-        data = json.loads(text)
-        return [float(data.get(f"Image {i + 1}", 0.0)) for i in range(num_frames)]
+        data = json.loads(clean)
+        return _extract_from_dict(data)
     except (json.JSONDecodeError, ValueError):
-        import re
-        numbers = re.findall(r"\d+\.?\d*", text)
-        scores = [float(n) for n in numbers[:num_frames]]
-        while len(scores) < num_frames:
-            scores.append(0.0)
-        return scores
+        pass
+
+    # 2. Try to find a JSON object anywhere in the text
+    m = re.search(r"\{[^{}]*\}", clean, re.DOTALL)
+    if m:
+        try:
+            data = json.loads(m.group())
+            if verbose:
+                print(f"  [parse] extracted JSON from text: {m.group()[:120]}")
+            return _extract_from_dict(data)
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+    # 3. Last-resort: pull out decimal numbers only (avoids grabbing image-label integers)
+    if verbose:
+        print(f"  [parse] JSON extraction failed; falling back to regex on: {clean[:200]!r}")
+    decimals = re.findall(r"\b0\.\d+\b|\b1\.0+\b", clean)
+    scores = [float(n) for n in decimals[:num_frames]]
+    while len(scores) < num_frames:
+        scores.append(0.0)
+    return scores
 
 
 def compute_voc(predicted: list[float], ground_truth_order: list[int] | None = None) -> float:

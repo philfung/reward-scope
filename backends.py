@@ -181,13 +181,23 @@ class QwenVLBackend(VLMBackend):
         self._true_token_id = true_ids[0]
         print(f"  Loaded. ' True' → token ID {self._true_token_id}")
 
-    def _build_inputs(self, frames: list[np.ndarray], prompt_text: str):
-        """Build tokenised model inputs with or without a chat template."""
+    def _build_inputs(self, frames: list[np.ndarray], prompt_text: str, use_chat_template: bool | None = None):
+        """Build tokenised model inputs with or without a chat template.
+
+        Args:
+            use_chat_template: Override self.use_chat_template if provided.
+                               generate() always passes True since the
+                               instruction-tuned model requires the generation
+                               prompt to produce coherent output.
+        """
         import torch
+
+        if use_chat_template is None:
+            use_chat_template = self.use_chat_template
 
         pil_images = [_frame_to_pil(f) for f in frames]
 
-        if self.use_chat_template:
+        if use_chat_template:
             # Standard instruction-tuned chat format.
             content = [{"type": "image", "image": img} for img in pil_images]
             content.append({"type": "text", "text": prompt_text})
@@ -226,7 +236,11 @@ class QwenVLBackend(VLMBackend):
     def generate(self, frames: list[np.ndarray], prompt_text: str, max_tokens: int = 512) -> str:
         import torch
 
-        inputs = self._build_inputs(frames, prompt_text)
+        # GVL free-form generation always needs the chat template so the
+        # instruction-tuned model produces a proper assistant response.
+        # (use_chat_template=False is only correct for log_prob_true's
+        # next-token prediction path, per paper §5.4.)
+        inputs = self._build_inputs(frames, prompt_text, use_chat_template=True)
         with torch.no_grad():
             output_ids = self._model.generate(
                 **inputs,
