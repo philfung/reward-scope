@@ -44,7 +44,7 @@ def compute_gvl(
     num_frames: int = 10,
     backend=None,
     # Convenience params — used to create a backend when none is supplied
-    backend_name: str = "qwen",
+    backend_name: str = "openai",
     model: str | None = None,
     verbose: bool = True,
 ) -> dict:

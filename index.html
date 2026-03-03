@@ -100,6 +100,7 @@
     .pair-chip.orange { color: #c06040; border-color: rgba(232,115,74,0.3); background: rgba(232,115,74,0.08); }
     .pair-chip.blue   { color: #4070a0; border-color: rgba(74,144,217,0.3);  background: rgba(74,144,217,0.08); }
     .pair-chip.green  { color: #40a070; border-color: rgba(74,200,140,0.3);  background: rgba(74,200,140,0.08); }
+    .chip-model { opacity: 0.6; font-size: 9px; }
 
     /* ── Main viewer ── */
     .main-view { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -145,7 +146,9 @@ async function scanPairs() {
       const r = await fetch(p.json);
       const d = await r.json();
       return { ...p, instruction: d.instruction || null, backend: d.backend || null,
-               hasTopreward: !!d.topreward, hasGvl: !!d.gvl, hasBruteforce: !!d.bruteforce_vlm };
+               hasTopreward: !!d.topreward, toprewardModel: d.topreward?.model || null,
+               hasGvl: !!d.gvl, gvlModel: d.gvl?.model || null,
+               hasBruteforce: !!d.bruteforce_vlm, bruteforceModel: d.bruteforce_vlm?.model || null };
     } catch { return p; }
   }));
 }
@@ -435,10 +438,9 @@ function App() {
                   <div className="pair-instruction">"{pair.instruction}"</div>
                 )}
                 <div className="pair-meta">
-                  {pair.hasTopreward  && <span className="pair-chip orange">TOPReward</span>}
-                  {pair.hasGvl        && <span className="pair-chip blue">GVL</span>}
-                  {pair.hasBruteforce && <span className="pair-chip green">BruteforceVLM</span>}
-                  {pair.backend       && <span className="pair-chip">{pair.backend}</span>}
+                  {pair.hasTopreward  && <span className="pair-chip orange">TOPReward{pair.toprewardModel && <span className="chip-model"> · {pair.toprewardModel}</span>}</span>}
+                  {pair.hasGvl        && <span className="pair-chip blue">GVL{pair.gvlModel && <span className="chip-model"> · {pair.gvlModel}</span>}</span>}
+                  {pair.hasBruteforce && <span className="pair-chip green">BruteforceVLM{pair.bruteforceModel && <span className="chip-model"> · {pair.bruteforceModel}</span>}</span>}
                 </div>
               </div>
             ))}

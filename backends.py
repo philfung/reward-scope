@@ -14,10 +14,13 @@ Both expose the same two methods used by all reward functions:
 
 import io
 import math
+import time
 import numpy as np
 from abc import ABC, abstractmethod
 from PIL import Image
 
+# Seconds to sleep after each OpenAI API call (to avoid rate limits)
+OPENAI_CALL_SLEEP_S = 30.0
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -255,8 +258,12 @@ class OpenAIBackend(VLMBackend):
                 print(f"           {lp.token!r:12s}  logprob={lp.logprob:.4f}{marker}")
             for lp in candidates:
                 if lp.token.strip().lower() == "true":
+                    print(f"  [OpenAI] sleeping {OPENAI_CALL_SLEEP_S}s …")
+                    time.sleep(OPENAI_CALL_SLEEP_S)
                     return lp.logprob
         print(f"  [OpenAI] WARNING: 'True' not in top-5; returning -20.0")
+        print(f"  [OpenAI] sleeping {OPENAI_CALL_SLEEP_S}s …")
+        time.sleep(OPENAI_CALL_SLEEP_S)
         return -20.0
 
     def generate(self, frames: list[np.ndarray], prompt_text: str, max_tokens: int = 512) -> str:
@@ -272,7 +279,10 @@ class OpenAIBackend(VLMBackend):
         u = response.usage
         if u:
             print(f"  [OpenAI] generate | model={self.model} | frames={len(frames)} | tokens={u.prompt_tokens}p + {u.completion_tokens}c = {u.total_tokens}")
-        return response.choices[0].message.content.strip()
+        result = (response.choices[0].message.content or "").strip()
+        print(f"  [OpenAI] sleeping {OPENAI_CALL_SLEEP_S}s …")
+        time.sleep(OPENAI_CALL_SLEEP_S)
+        return result
 
 
 # ---------------------------------------------------------------------------
@@ -291,13 +301,13 @@ def make_backend(
     Args:
         backend: "openai" or "qwen".
         model:   Model name/ID override.
-                 OpenAI default:  "gpt-4o-mini"
+                 OpenAI default:  "gpt-4o"
                  Qwen default:    "Qwen/Qwen3-VL-8B-Instruct"
         openai_api_key: OpenAI API key (OpenAI only).
         use_chat_template: Qwen only. Default False matches paper's best results.
     """
     if backend == "openai":
-        return OpenAIBackend(model=model or "gpt-4o-mini", api_key=openai_api_key)
+        return OpenAIBackend(model=model or "gpt-4o", api_key=openai_api_key)
     elif backend == "qwen":
         return QwenVLBackend(
             model_name=model or "Qwen/Qwen3-VL-8B-Instruct",

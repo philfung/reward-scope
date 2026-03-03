@@ -48,3 +48,7 @@ Use the OpenAI backend instead of local Qwen:
 export OPENAI_API_KEY="your-key"
 python run_rewards.py --video robot.mp4 --instruction "Pick up the cube" --backend openai
 ```
+
+python run_rewards.py --video viewer_files/clothesfolding1.mp4 --instruction "fold the sweatshirt" --openai-api-key <>
+
+python run_rewards.py --video viewer_files/clothesfolding1.mp4 --instruction "fold the sweatshirt by first flattening the shirt, then folding each arm horizontally across the back, then folding the lower half of the sweatshirt vertically up" --num-frames 8 --openai-api-key <>
