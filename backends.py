@@ -37,6 +37,16 @@ def _frame_to_jpeg_bytes(frame: np.ndarray) -> bytes:
     return buf.tobytes()
 
 
+def _debug_dump_frames(frames: list[np.ndarray], prefix: str = "frame", out_dir: str = "debug_frames") -> None:
+    """Save frames to out_dir/<prefix>_<i>.jpg for visual inspection."""
+    import os, cv2
+    os.makedirs(out_dir, exist_ok=True)
+    for i, frame in enumerate(frames):
+        path = os.path.join(out_dir, f"{prefix}_{i:02d}.jpg")
+        cv2.imwrite(path, frame)
+    print(f"  [debug] wrote {len(frames)} frame(s) to {out_dir}/")
+
+
 # ---------------------------------------------------------------------------
 # Abstract base
 # ---------------------------------------------------------------------------
@@ -252,31 +262,41 @@ class OpenAIBackend(VLMBackend):
     def _image_content(self, frame: np.ndarray) -> dict:
         import base64
         b64 = base64.b64encode(_frame_to_jpeg_bytes(frame)).decode()
-        return {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}
+        return {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "high"}}
 
     def log_prob_true(self, frames: list[np.ndarray], prompt_text: str) -> float:
+        shapes = [f.shape for f in frames]
+        print(f"  [OpenAI] frames={len(frames)} shapes={shapes}")
+        print(f"  [OpenAI] prompt: {prompt_text!r}")
+        _debug_dump_frames(frames, prefix=f"logprob_k{len(frames)}")
         content = [self._image_content(f) for f in frames]
         content.append({"type": "text", "text": prompt_text})
 
         response = self._client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": content}],
-            max_tokens=1,
+            max_completion_tokens=2,  # only token_logprobs[0] is used; 2 avoids a "can't finish" 400 with max=1
             temperature=0.0,
             logprobs=True,
-            top_logprobs=20,
+            top_logprobs=5,
         )
 
         u = response.usage
         if u:
-            print(f"  [OpenAI] log_prob_true | model={self.model} | frames={len(frames)} | tokens={u.prompt_tokens}prompt + {u.completion_tokens}completion = {u.total_tokens}")
+            print(f"  [OpenAI] tokens: {u.prompt_tokens} prompt + {u.completion_tokens} completion = {u.total_tokens}")
 
         token_logprobs = response.choices[0].logprobs.content
         if token_logprobs:
-            for top_lp in token_logprobs[0].top_logprobs:
-                if top_lp.token.strip().lower() == "true":
-                    return top_lp.logprob
-        return -20.0  # "True" not in top-20
+            candidates = token_logprobs[0].top_logprobs
+            print(f"  [OpenAI] top-{len(candidates)} first-token candidates:")
+            for lp in candidates:
+                marker = " <-- THIS" if lp.token.strip().lower() == "true" else ""
+                print(f"           {lp.token!r:12s}  logprob={lp.logprob:.4f}{marker}")
+            for lp in candidates:
+                if lp.token.strip().lower() == "true":
+                    return lp.logprob
+        print(f"  [OpenAI] WARNING: 'True' not in top-5; returning -20.0")
+        return -20.0
 
     def generate(self, frames: list[np.ndarray], prompt_text: str, max_tokens: int = 512) -> str:
         content = [self._image_content(f) for f in frames]
@@ -285,7 +305,7 @@ class OpenAIBackend(VLMBackend):
         response = self._client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": content}],
-            max_tokens=max_tokens,
+            max_completion_tokens=max_tokens,
             temperature=0.0,
         )
         u = response.usage

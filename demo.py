@@ -208,6 +208,29 @@ def _save_or_show(fig, save_path):
         plt.show()
 
 
+def save_json(top_result, gvl_result, args, backend_label, path):
+    """Save results as JSON for the viewer.html visualiser."""
+    import json
+    data = {
+        "instruction": args.instruction,
+        "backend": backend_label,
+        "num_frames": args.num_frames,
+    }
+    if top_result:
+        data["topreward"] = {
+            "normalized_progress": top_result["normalized_progress"],
+            "dense_rewards": top_result["dense_rewards"],
+        }
+    if gvl_result:
+        data["gvl"] = {
+            "progress_scores": gvl_result["progress_scores"],
+            "voc": gvl_result["voc"],
+        }
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2)
+    print(f"\nResults saved to: {path}")
+
+
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
@@ -230,6 +253,8 @@ def main():
                         help="Overlay both methods on one axes")
     parser.add_argument("--save-plot", default=None,
                         help="Save plot to this path instead of displaying")
+    parser.add_argument("--save-json", default=None,
+                        help="Save results as JSON (for viewer.html)")
 
     # Backend selection
     backend_group = parser.add_argument_group("backend")
@@ -311,6 +336,10 @@ def main():
         print(f"  TOPReward VOC: {compute_voc(top_result['normalized_progress']):.4f}")
     if gvl_result:
         print(f"  GVL VOC:       {gvl_result['voc']:.4f}")
+
+    # JSON export
+    if args.save_json:
+        save_json(top_result, gvl_result, args, backend_label, args.save_json)
 
     # Plot
     if args.combined_plot and top_result and gvl_result:
