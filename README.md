@@ -1,10 +1,10 @@
 # RewardScope
-A tool for running and comparing VLM-based robot reward functions from different papers.
+Compare VLM-based robot reward functions on your own manipulation videos.
 
 Current reward functions:
-- [TOPReward](https://topreward.github.io/webpage/) — UW & AllenAI
-- [GVL](https://arxiv.org/pdf/2411.04549) — "Vision Language Models are In-Context Value Learners", Google DeepMind
-- BruteforceVLM — direct per-frame progress estimation via text generation
+- [TOPReward](https://topreward.github.io/webpage/) — from "TOPReward: Token Probabilities as Hidden Zero-Shot Rewards for Robotics", UW & AllenAI
+- [Generative Value Learning (GVL)](https://arxiv.org/pdf/2411.04549) — from "Vision Language Models are In-Context Value Learners", Google DeepMind
+- Brute Force — at each frame, sends the video up to that point to the VLM and asks for a progress score between 0.0 and 1.0
 
 ## Installation
 
@@ -22,10 +22,19 @@ pip install torch torchvision transformers accelerate
 ```
 
 ## Usage
-Take your video of robot manipulation and run reward functions on it:
+1. Take a video of robot manipulation.
+
+2. Run the reward functions on the video:
 ```
-python run_rewards.py --video stackcubes2_480p_qwen.mp4 --instruction "create a tower of 5 cubes"
+python run_rewards.py --video myvideo.mp4 --instruction "create a tower of 5 cubes"
 ```
+
+3. View the results in your browser:
+```
+./run_viewer.sh
+```
+
+## Other
 
 Run a specific subset of methods:
 ```
@@ -36,9 +45,4 @@ Use the OpenAI backend instead of local Qwen:
 ```
 export OPENAI_API_KEY="your-key"
 python run_rewards.py --video robot.mp4 --instruction "Pick up the cube" --backend openai
-```
-
-Now view the results in your browser:
-```
-./run_viewer.sh
 ```
