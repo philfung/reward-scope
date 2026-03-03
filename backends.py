@@ -172,10 +172,14 @@ class QwenVLBackend(VLMBackend):
         )
         self._model.eval()
 
-        # Pre-compute the token ID for "True" (single token in Qwen vocab)
-        true_ids = self._processor.tokenizer.encode("True", add_special_tokens=False)
+        # Pre-compute the token ID for " True" (with leading space).
+        # The prompt ends with "The answer is:" so the model generates " True"
+        # (ĠTrue, token ID 3007) — not bare "True" (ID 2514).  Using the
+        # wrong ID silently returns near-zero probability for every query.
+        true_ids = self._processor.tokenizer.encode(" True", add_special_tokens=False)
+        assert len(true_ids) == 1, f"' True' should be a single token but got {true_ids}"
         self._true_token_id = true_ids[0]
-        print(f"  Loaded. 'True' → token ID {self._true_token_id}")
+        print(f"  Loaded. ' True' → token ID {self._true_token_id}")
 
     def _build_inputs(self, frames: list[np.ndarray], prompt_text: str):
         """Build tokenised model inputs with or without a chat template."""
@@ -211,15 +215,11 @@ class QwenVLBackend(VLMBackend):
 
         inputs = self._build_inputs(frames, prompt_text)
         with torch.no_grad():
-            outputs = self._model.generate(
-                **inputs,
-                max_new_tokens=1,
-                do_sample=False,
-                return_dict_in_generate=True,
-                output_scores=True,
-            )
-        # scores[0]: logits for the first generated token, shape (1, vocab_size)
-        logits = outputs.scores[0][0]
+            # Direct forward pass — equivalent to the paper's log p_θ(a | context).
+            # Avoids generation-mode logit processors that could perturb the scores.
+            outputs = self._model(**inputs)
+        # logits[:, -1, :] are the next-token logits at the last input position
+        logits = outputs.logits[0, -1, :]
         log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
         return log_probs[self._true_token_id].item()
 

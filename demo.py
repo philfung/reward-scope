@@ -218,6 +218,7 @@ def save_json(top_result, gvl_result, args, backend_label, path):
     }
     if top_result:
         data["topreward"] = {
+            "raw_log_probs": top_result["raw_log_probs"],
             "normalized_progress": top_result["normalized_progress"],
             "dense_rewards": top_result["dense_rewards"],
         }
