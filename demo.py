@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Demo: Run TOPReward and GVL on a video and visualize progress curves.
+Demo: Run TOPReward and GVL on a video and save results for the viewer.
 
 Usage — Gemini backend (default):
     export GOOGLE_API_KEY="your-key"
@@ -14,8 +14,7 @@ Common flags:
     --num-frames   N          frames to sample (default 10)
     --method       both|topreward|gvl
     --model        override model name/ID for either backend
-    --combined-plot           overlay both methods on one axes
-    --save-plot    path.png   save instead of showing
+    --save-json    path.json  save results for viewer.html
 
 Gemini-specific:
     --api-key      KEY        or set GOOGLE_API_KEY env var
@@ -29,9 +28,6 @@ import argparse
 import os
 import sys
 import time
-
-import matplotlib.pyplot as plt
-import numpy as np
 
 from constants import TOPREWARD_LOGPROB_TIMEOUT_SECS, NUM_FRAMES_DEFAULT
 
@@ -121,92 +117,6 @@ def run_gvl(args, backend):
     return result
 
 
-# ---------------------------------------------------------------------------
-# Plotting
-# ---------------------------------------------------------------------------
-
-def plot_results(top_result, gvl_result, args, backend_label, save_path=None):
-    """Side-by-side plot for TOPReward and/or GVL."""
-    has_top = top_result is not None
-    has_gvl = gvl_result is not None
-    ncols = 2 if (has_top and has_gvl) else 1
-
-    fig, axes = plt.subplots(1, ncols, figsize=(7 * ncols, 5))
-    if ncols == 1:
-        axes = [axes]
-
-    x = np.linspace(0, 1, args.num_frames)
-    ax_idx = 0
-
-    if has_top:
-        ax = axes[ax_idx]
-        p = top_result["normalized_progress"]
-        ax.plot(x, p, "o-", color="#E8734A", linewidth=2, markersize=6, label="TOPReward")
-        ax.fill_between(x, 0, p, alpha=0.15, color="#E8734A")
-        ax.set_title("TOPReward", fontsize=14, fontweight="bold")
-        _style_ax(ax, x, p)
-        ax_idx += 1
-
-    if has_gvl:
-        ax = axes[ax_idx]
-        s = gvl_result["progress_scores"]
-        label = f"GVL  (VOC={gvl_result['voc']:.3f})"
-        ax.plot(x, s, "s-", color="#4A90D9", linewidth=2, markersize=6, label=label)
-        ax.fill_between(x, 0, s, alpha=0.15, color="#4A90D9")
-        ax.set_title("GVL", fontsize=14, fontweight="bold")
-        _style_ax(ax, x, s)
-
-    fig.suptitle(
-        f'"{args.instruction}"  —  {backend_label}',
-        fontsize=12, style="italic", y=1.01,
-    )
-    plt.tight_layout()
-    _save_or_show(fig, save_path)
-
-
-def plot_combined(top_result, gvl_result, args, backend_label, save_path=None):
-    """Overlay both methods on a single axes."""
-    fig, ax = plt.subplots(figsize=(10, 5))
-    x = np.linspace(0, 1, args.num_frames)
-
-    if top_result:
-        p = top_result["normalized_progress"]
-        ax.plot(x, p, "o-", color="#E8734A", linewidth=2.5, markersize=7, label="TOPReward")
-
-    if gvl_result:
-        s = gvl_result["progress_scores"]
-        ax.plot(x, s, "s--", color="#4A90D9", linewidth=2, markersize=6,
-                label=f"GVL  (VOC={gvl_result['voc']:.3f})")
-
-    ax.plot(x, x, ":", color="gray", alpha=0.5, label="Ideal (linear)")
-    ax.set_title(
-        f'"{args.instruction}"  —  {backend_label}',
-        fontsize=13, fontweight="bold",
-    )
-    _style_ax(ax, x, [])
-    plt.tight_layout()
-    _save_or_show(fig, save_path)
-
-
-def _style_ax(ax, x, values):
-    ax.set_xlabel("Normalised Time", fontsize=12)
-    ax.set_ylabel("Progress (0–1)", fontsize=12)
-    ax.set_ylim(-0.05, 1.05)
-    ax.grid(True, alpha=0.3)
-    ax.legend(fontsize=10)
-    for i, (xi, yi) in enumerate(zip(x, values)):
-        if i % max(1, len(x) // 5) == 0 or i == len(x) - 1:
-            ax.annotate(f"{yi:.2f}", (xi, yi), textcoords="offset points",
-                        xytext=(0, 10), ha="center", fontsize=8)
-
-
-def _save_or_show(fig, save_path):
-    if save_path:
-        fig.savefig(save_path, dpi=150, bbox_inches="tight")
-        print(f"\nPlot saved to: {save_path}")
-    else:
-        plt.show()
-
 
 def save_json(top_result, gvl_result, args, backend_label, path):
     """Save results as JSON for the viewer.html visualiser."""
@@ -250,10 +160,6 @@ def main():
                         help="Frames to sample (default: %d)" % NUM_FRAMES_DEFAULT)
     parser.add_argument("--method", choices=["both", "topreward", "gvl"], default="both",
                         help="Which method(s) to run (default: both)")
-    parser.add_argument("--combined-plot", action="store_true",
-                        help="Overlay both methods on one axes")
-    parser.add_argument("--save-plot", default=None,
-                        help="Save plot to this path instead of displaying")
     parser.add_argument("--save-json", default=None,
                         help="Save results as JSON (for viewer.html)")
 
@@ -341,12 +247,6 @@ def main():
     # JSON export
     if args.save_json:
         save_json(top_result, gvl_result, args, backend_label, args.save_json)
-
-    # Plot
-    if args.combined_plot and top_result and gvl_result:
-        plot_combined(top_result, gvl_result, args, backend_label, save_path=args.save_plot)
-    else:
-        plot_results(top_result, gvl_result, args, backend_label, save_path=args.save_plot)
 
 
 if __name__ == "__main__":
