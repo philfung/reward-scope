@@ -1,5 +1,6 @@
 # Core (always needed)
 google-genai
+openai
 opencv-python
 matplotlib
 scipy

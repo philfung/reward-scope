@@ -9,8 +9,9 @@ Backend-agnostic: pass any VLMBackend from backends.py.
 """
 
 import math
+import time
 import numpy as np
-
+from constants import TOPREWARD_LOGPROB_TIMEOUT_SECS, NUM_FRAMES_DEFAULT
 
 def extract_frames(video_path: str, num_frames: int) -> list[np.ndarray]:
     """Extract num_frames uniformly spaced frames from a video file."""
@@ -49,7 +50,7 @@ def build_prompt(instruction: str) -> str:
 def compute_topreward(
     video_path: str,
     instruction: str,
-    num_frames: int = 10,
+    num_frames: int = NUM_FRAMES_DEFAULT,
     backend=None,
     # Convenience params — used to create a backend when none is supplied
     backend_name: str = "gemini",
@@ -104,6 +105,8 @@ def compute_topreward(
         raw_log_probs.append(lp)
         if verbose:
             print(f"  Frame {k}/{len(frames)}: log P(True) = {lp:.4f}")
+        if k < len(frames):
+            time.sleep(TOPREWARD_LOGPROB_TIMEOUT_SECS)
 
     # Min-max normalisation (Eq. 2)
     raw = np.array(raw_log_probs)

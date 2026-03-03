@@ -33,6 +33,8 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
+from constants import TOPREWARD_LOGPROB_TIMEOUT_SECS, NUM_FRAMES_DEFAULT
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -45,6 +47,7 @@ def _make_backend(args):
         backend=args.backend,
         model=args.model or None,
         api_key=getattr(args, "api_key", None),
+        openai_api_key=getattr(args, "openai_api_key", None),
         use_chat_template=getattr(args, "use_chat_template", False),
     )
 
@@ -53,6 +56,8 @@ def _backend_label(args) -> str:
     """Short label for plot titles / summary."""
     if args.backend == "gemini":
         return f"Gemini ({args.model or 'gemini-2.5-flash'})"
+    if args.backend == "openai":
+        return f"OpenAI ({args.model or 'gpt-4o-mini'})"
     model_short = (args.model or "Qwen2.5-VL-7B").split("/")[-1]
     tmpl = "+chat" if getattr(args, "use_chat_template", False) else "no-chat"
     return f"Qwen ({model_short}, {tmpl})"
@@ -217,8 +222,8 @@ def main():
                         help="Path to video file (mp4, avi, …)")
     parser.add_argument("--instruction", required=True,
                         help='Task instruction, e.g. "Pick up the cube"')
-    parser.add_argument("--num-frames", type=int, default=10,
-                        help="Frames to sample (default: 10)")
+    parser.add_argument("--num-frames", type=int, default=NUM_FRAMES_DEFAULT,
+                        help="Frames to sample (default: %d)" % NUM_FRAMES_DEFAULT)
     parser.add_argument("--method", choices=["both", "topreward", "gvl"], default="both",
                         help="Which method(s) to run (default: both)")
     parser.add_argument("--combined-plot", action="store_true",
@@ -229,8 +234,8 @@ def main():
     # Backend selection
     backend_group = parser.add_argument_group("backend")
     backend_group.add_argument(
-        "--backend", choices=["gemini", "qwen"], default="gemini",
-        help='VLM backend: "gemini" (API, default) or "qwen" (local GPU)',
+        "--backend", choices=["gemini", "openai", "qwen"], default="gemini",
+        help='VLM backend: "gemini" (default), "openai", or "qwen" (local GPU)',
     )
     backend_group.add_argument(
         "--model", default=None,
@@ -245,6 +250,11 @@ def main():
     gemini_group = parser.add_argument_group("Gemini options")
     gemini_group.add_argument("--api-key", default=None,
                                help="Google API key (or set GOOGLE_API_KEY)")
+
+    # OpenAI-specific
+    openai_group = parser.add_argument_group("OpenAI options")
+    openai_group.add_argument("--openai-api-key", default=None,
+                               help="OpenAI API key (or set OPENAI_API_KEY)")
 
     # Qwen-specific
     qwen_group = parser.add_argument_group("Qwen options")
@@ -268,6 +278,14 @@ def main():
         if not args.api_key and not os.environ.get("GOOGLE_API_KEY"):
             print(
                 "Error: Gemini backend requires --api-key or GOOGLE_API_KEY env var.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+    if args.backend == "openai":
+        if not args.openai_api_key and not os.environ.get("OPENAI_API_KEY"):
+            print(
+                "Error: OpenAI backend requires --openai-api-key or OPENAI_API_KEY env var.",
                 file=sys.stderr,
             )
             sys.exit(1)
