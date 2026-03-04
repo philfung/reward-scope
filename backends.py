@@ -20,7 +20,7 @@ from abc import ABC, abstractmethod
 from PIL import Image
 
 # Seconds to sleep after each OpenAI API call (to avoid rate limits)
-OPENAI_CALL_SLEEP_S = 45.0
+OPENAI_CALL_SLEEP_S = 120.0
 
 # ---------------------------------------------------------------------------
 # Shared helpers
