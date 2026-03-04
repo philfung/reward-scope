@@ -1,5 +1,5 @@
 #!/bin/bash
-PORT=8080
+PORT=8081
 echo ""
 echo "Starting viewer at http://localhost:$PORT"
 echo ""

@@ -1,8 +1,10 @@
 {
   "instruction": "create a tower of 5 cubes",
-  "backend": "Qwen (Qwen3-VL-8B)",
+  "backend": "TOPReward=Qwen3VL-8B | GVL=GPT-4o-mini | BruteforceVLM=GPT-4o-mini",
+
   "num_frames": 10,
   "topreward": {
+    "model": "Qwen3VL-8B",
     "raw_log_probs": [
       -4.5625,
       -3.171875,
@@ -41,6 +43,7 @@
     ]
   },
   "gvl": {
+    "model": "gpt-4o-mini",
     "progress_scores": [
       0.2,
       0.4,
@@ -56,6 +59,7 @@
     "voc": 0.3952193658051665
   },
   "bruteforce_vlm": {
+    "model": "gpt-4o-mini",
     "progress_scores": [
       0.0,
       0.2,
