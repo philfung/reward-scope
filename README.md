@@ -1,5 +1,5 @@
 # RewardScope 🎛️
-#### Compare robot reward functions on your own manipulation videos. ####
+### Compare robot reward functions on your own manipulation videos. ###
 
 <img src="screenshots/example.gif">
 
@@ -13,7 +13,7 @@ Reward functions you can run on your videos:
 
 ## Run On Your Own Videos
 
-1. Create an MP4 video of robot manipulation.
+Create an MP4 video of robot manipulation.
     (Downsize to 480p if possible, as image pixels are passed as tokens)
 
 2. Run the steps in the *Installation* section 
