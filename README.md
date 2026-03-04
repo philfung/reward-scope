@@ -23,11 +23,12 @@ Create an MP4 video of robot manipulation.
 python run_rewards.py --video myvideo.mp4 --instruction "create a tower of 5 cubes"
 ```
 
-   This will probably take ~ 10 - 20 minutes, depending on your computer.
-
    If you have an OpenAI API key, add the flags `--openai-api-key <your key>` and `--method topreward,gvl,bruteforce_vlm`.
 
    If you don't have an OpenAI API key, add the flag `--method topreward`.
+
+   This will probably take ~ 10 - 20 minutes, depending on your computer.
+
 
 4. View the results in your browser:
 ```
