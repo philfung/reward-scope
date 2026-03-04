@@ -20,7 +20,7 @@ from abc import ABC, abstractmethod
 from PIL import Image
 
 # Seconds to sleep after each OpenAI API call (to avoid rate limits)
-OPENAI_CALL_SLEEP_S = 30.0
+OPENAI_CALL_SLEEP_S = 45.0
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -258,7 +258,7 @@ class OpenAIBackend(VLMBackend):
                 print(f"           {lp.token!r:12s}  logprob={lp.logprob:.4f}{marker}")
             for lp in candidates:
                 if lp.token.strip().lower() == "true":
-                    print(f"  [OpenAI] sleeping {OPENAI_CALL_SLEEP_S}s …")
+                    print(f"  [OpenAI] sleeping {OPENAI_CALL_SLEEP_S}s to prevent rate limiting …")
                     time.sleep(OPENAI_CALL_SLEEP_S)
                     return lp.logprob
         print(f"  [OpenAI] WARNING: 'True' not in top-5; returning -20.0")
@@ -280,7 +280,7 @@ class OpenAIBackend(VLMBackend):
         if u:
             print(f"  [OpenAI] generate | model={self.model} | frames={len(frames)} | tokens={u.prompt_tokens}p + {u.completion_tokens}c = {u.total_tokens}")
         result = (response.choices[0].message.content or "").strip()
-        print(f"  [OpenAI] sleeping {OPENAI_CALL_SLEEP_S}s …")
+        print(f"  [OpenAI] sleeping {OPENAI_CALL_SLEEP_S}s to prevent rate limiting …")
         time.sleep(OPENAI_CALL_SLEEP_S)
         return result
 
@@ -301,13 +301,13 @@ def make_backend(
     Args:
         backend: "openai" or "qwen".
         model:   Model name/ID override.
-                 OpenAI default:  "gpt-4o"
+                 OpenAI default:  "gpt-4o-mini"
                  Qwen default:    "Qwen/Qwen3-VL-8B-Instruct"
         openai_api_key: OpenAI API key (OpenAI only).
         use_chat_template: Qwen only. Default False matches paper's best results.
     """
     if backend == "openai":
-        return OpenAIBackend(model=model or "gpt-4o", api_key=openai_api_key)
+        return OpenAIBackend(model=model or "gpt-4o-mini", api_key=openai_api_key)
     elif backend == "qwen":
         return QwenVLBackend(
             model_name=model or "Qwen/Qwen3-VL-8B-Instruct",
