@@ -1,5 +1,8 @@
 # RewardScope 🎛️
-Visually compare VLM-based robot reward functions on your own manipulation videos.
+Visually compare robot reward functions on your own manipulation videos.
+
+<img src="screenshots/example.gif">
+
 
 Reward functions you can run on your videos:
 - [TOPReward](https://topreward.github.io/webpage/) — from "TOPReward: Token Probabilities as Hidden Zero-Shot Rewards for Robotics", UW & AllenAI
