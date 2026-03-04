@@ -11,6 +11,29 @@ Reward functions you can run on your videos:
 
 ...and easy to add more!
 
+## Run On Your Own Videos
+
+1. Create an MP4 video of robot manipulation.
+    (Downsize to 480p if possible, as image pixels are passed as tokens)
+
+2. Run the steps in the *Installation* section 
+
+3. Run the script to calculate reward functions on your video:
+```
+python run_rewards.py --video myvideo.mp4 --instruction "create a tower of 5 cubes"
+```
+
+This will probably take ~ 10 - 20 minutes, depending on your computer.
+
+If you have an OpenAI API key, add the flags `--openai-api-key <your key>` and `--method topreward,gvl,bruteforce_vlm`.
+
+If you don't have an OpenAI API key, add the flag `--method topreward`.
+
+4. View the results in your browser:
+```
+./run_viewer.sh
+```
+
 ## Installation
 
 ### 1. Install Python packages
@@ -30,20 +53,3 @@ pip install torch torchvision transformers accelerate
 Create an [OpenAI API key](https://platform.openai.com/api-keys).
 
 This is used for running GVL and Brute Force.
-
-## Run on your own videos
-
-1. Create an MP4 video of robot manipulation. Downsize to 480p if possible, as image pixels are passed as tokens.
-
-2. Run the script to calculate reward functions on your video:
-```
-python run_rewards.py --video myvideo.mp4 --instruction "create a tower of 5 cubes"
-```
-If you have an OpenAI API key, add the flags `--openai-api-key <your key>` and `--method topreward,gvl,bruteforce_vlm`.
-
-If you don't have an OpenAI API key, add the flag `--method topreward`.
-
-3. View the results in your browser:
-```
-./run_viewer.sh
-```
