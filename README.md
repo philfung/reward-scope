@@ -13,7 +13,7 @@ Reward functions you can run on your videos:
 
 ## Run On Your Own Videos
 
-1.Create an MP4 video of robot manipulation.
+1. Create an MP4 video of robot manipulation.
     (Downsize to 480p if possible, as image pixels are passed as tokens)
 
 2. Run the steps in the *Installation* section 
