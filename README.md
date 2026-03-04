@@ -1,4 +1,4 @@
-# RewardScope 🎛️
+⁹# RewardScope 🎛️
 ### Compare robot reward functions on your own manipulation videos. ###
 
 <img src="screenshots/example.gif">
@@ -49,7 +49,7 @@ Requires ~15 GB disk (model weights) and ~16 GB unified/GPU memory.
 ```
 pip install torch torchvision transformers accelerate
 ```
-
+This is used to run TOPReward.
 ### 3. Get an OpenAI API key (optional)
 Create an [OpenAI API key](https://platform.openai.com/api-keys).
 
