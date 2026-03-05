@@ -41,10 +41,6 @@
       2.0
     ]
   },
-  "robometer": {
-    "model": "Qwen3VL-4B-RBM-1M",
-    "progress_scores": [0.08, 0.45, 0.17, 0.67, 0.28, 0.88, 0.28, 0.87, 0.71, 0.85]
-  },
   "gvl": {
     "model": "gpt-4o-mini",
     "progress_scores": [
