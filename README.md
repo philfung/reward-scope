@@ -16,7 +16,7 @@ Reward functions you can run on your videos:
 1. **Create an MP4 video of robot manipulation**.
     (Downsize it to 480p if possible, as image pixels are passed as tokens)
 
-2. **Run the steps in the *Installation* section**. 
+2. **Run the steps in the *[Installation](https://github.com/philfung/reward-scope?tab=readme-ov-file#installation)* section**. 
 
 3. 
 
@@ -35,7 +35,7 @@ Reward functions you can run on your videos:
 
 * **Run `robometer`**
 
-     Compute the robometer reward on the same video file and populate this github repo with the results by following the instructions [here](https://github.com/philfung/robometer?tab=readme-ov-file#usage).
+     Follow instructions [here](https://github.com/philfung/robometer?tab=readme-ov-file#usage).  This will compute the robometer reward on the same video file and populate this github repo with the data.
 
 
 4. View the results in your browser:
