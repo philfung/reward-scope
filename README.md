@@ -6,6 +6,7 @@
 
 Reward functions you can run on your videos:
 - [TOPReward](https://topreward.github.io/webpage/) — from "TOPReward: Token Probabilities as Hidden Zero-Shot Rewards for Robotics", UW & AllenAI
+- [Robometer](https://robometer.github.io/) - from "Robometer: Scaling General-Purpose Robotic Reward Models via Trajectory Comparisons", USC
 - [Generative Value Learning (GVL)](https://arxiv.org/pdf/2411.04549) — from "Vision Language Models are In-Context Value Learners", Google DeepMind
 - Brute Force — at each frame, sends the video up to that point to the VLM and asks for a progress score between 0.0 and 1.0
 
