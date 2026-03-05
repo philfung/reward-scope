@@ -1,7 +1,11 @@
 {
   "instruction": "fold the sweatshirt by first flattening the shirt, then folding each arm horizontally across the back, then folding the lower half of the sweatshirt vertically up",
-  "backend": "TOPReward=Qwen3VL-8B | GVL=GPT-4o-mini | BruteforceVLM=GPT-4o-mini",
+  "backend": "Robometer=Qwen3VL-4B-RBM-1M | TOPReward=Qwen3VL-8B | GVL=GPT-4o-mini | BruteforceVLM=GPT-4o-mini",
   "num_frames": 20,
+  "robometer": {
+    "model": "Qwen3VL-4B-RBM-1M",
+    "progress_scores": [0.07, 0.05, 0.20, 0.65, 0.80, 0.69, 0.36, 0.38, 0.53, 0.32, 0.25, 0.26, 0.57, 0.68, 0.67, 0.74, 0.79, 0.76, 0.88, 0.95]
+  },
   "topreward": {
     "model": "Qwen3VL-8B",
     "raw_log_probs": [-3.2500, -3.0000, -3.0625, -2.2812, -2.1719, -1.5000, -1.0625, -0.9141, -0.9922, -0.9453, -0.7812, -0.8125, -0.4785, -0.4922, -0.4316, -0.2949, -0.2949, -0.1426, -0.1846, -0.1953]
