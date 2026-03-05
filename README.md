@@ -13,8 +13,8 @@ Reward functions you can run on your videos:
 
 # How to run on your own videos #
 
-1. **Create an MP4 video of robot manipulation**.
-    (Downsize it to 480p if possible, as image pixels are passed as tokens)
+1. **Create an MP4 video of robot manipulation** ([Example](https://github.com/philfung/reward-scope/blob/main/viewer_files/clothesfolding1.mp4))
+    .  If possible, downsize it to 480p, as the image pixels are passed as tokens.
 
 2. **Run the steps in the *[Installation](https://github.com/philfung/reward-scope?tab=readme-ov-file#installation)* section**. 
 
