@@ -104,6 +104,7 @@
     .pair-chip.blue   { color: #4070a0; border-color: rgba(74,144,217,0.3);  background: rgba(74,144,217,0.08); }
     .pair-chip.green  { color: #40a070; border-color: rgba(74,200,140,0.3);  background: rgba(74,200,140,0.08); }
     .pair-chip.purple { color: #9060c0; border-color: rgba(160,100,220,0.3); background: rgba(160,100,220,0.08); }
+    .pair-chip.teal   { color: #309090; border-color: rgba(74,188,188,0.3);  background: rgba(74,188,188,0.08); }
     .chip-model { opacity: 0.6; font-size: 9px; }
 
     /* ── Main viewer ── */
@@ -153,7 +154,8 @@ async function scanPairs() {
                hasTopreward: !!d.topreward, toprewardModel: d.topreward?.model || null,
                hasGvl: !!d.gvl, gvlModel: d.gvl?.model || null,
                hasBruteforce: !!d.bruteforce_vlm, bruteforceModel: d.bruteforce_vlm?.model || null,
-               hasRobometer: !!d.robometer, robometerModel: d.robometer?.model || null };
+               hasRobometer: !!d.robometer, robometerModel: d.robometer?.model || null,
+               hasRoboreward: !!d.roboreward, roborewardModel: d.roboreward?.model || null };
     } catch { return p; }
   }));
 }
@@ -219,6 +221,18 @@ function buildChart(canvas, data) {
       borderColor: '#A064DC', backgroundColor: 'rgba(160,100,220,0.07)',
       borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
       pointBackgroundColor: '#A064DC', borderDash: [8, 3],
+      tension: 0, fill: true, spanGaps: false,
+    });
+  }
+  if (data.roboreward) {
+    datasets.push({
+      label: 'RoboReward',
+      _full: makePoints(data.roboreward.progress_scores),
+      data: [],
+      yAxisID: 'y',
+      borderColor: '#4ABCBC', backgroundColor: 'rgba(74,188,188,0.07)',
+      borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
+      pointBackgroundColor: '#4ABCBC', borderDash: [5, 3],
       tension: 0, fill: true, spanGaps: false,
     });
   }
@@ -458,6 +472,7 @@ function App() {
                   {pair.hasTopreward  && <span className="pair-chip orange">TOPReward{pair.toprewardModel && <span className="chip-model"> · {pair.toprewardModel}</span>}</span>}
                   {pair.hasGvl        && <span className="pair-chip blue">GVL{pair.gvlModel && <span className="chip-model"> · {pair.gvlModel}</span>}</span>}
                   {pair.hasBruteforce && <span className="pair-chip green">BruteforceVLM{pair.bruteforceModel && <span className="chip-model"> · {pair.bruteforceModel}</span>}</span>}
+                  {pair.hasRoboreward  && <span className="pair-chip teal">RoboReward{pair.roborewardModel && <span className="chip-model"> · {pair.roborewardModel}</span>}</span>}
                   {pair.hasRobometer  && <span className="pair-chip purple">Robometer{pair.robometerModel && <span className="chip-model"> · {pair.robometerModel}</span>}</span>}
                 </div>
               </div>

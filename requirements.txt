@@ -7,7 +7,7 @@ scipy
 numpy
 Pillow
 
-# Qwen backend (only needed for --backend qwen)
+# Qwen backend (only needed for --backend qwen or RoboReward)
 # Requires GPU with ~16 GB VRAM
 # transformers>=4.45
 # torch>=2.0

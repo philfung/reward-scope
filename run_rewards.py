@@ -4,6 +4,7 @@ RewardScope: Run and compare VLM-based robot reward functions on a video.
 
 Backends are fixed per method:
     TOPReward     → Qwen (local GPU)
+    RoboReward    → Qwen (local GPU)
     GVL           → OpenAI
     BruteforceVLM → OpenAI
 
@@ -12,9 +13,9 @@ Usage:
     python run_rewards.py --video robot.mp4 --instruction "Pick up the cube"
 
 Common flags:
-    --num-frames   N                              frames to sample (default 10)
-    --method       topreward,gvl,bruteforce_vlm   comma-separated list of methods (default: all)
-    --save-json    path.json                      save results for viewer.html
+    --num-frames   N                                        frames to sample (default 10)
+    --method       topreward,roboreward,gvl,bruteforce_vlm  comma-separated list of methods (default: all)
+    --save-json    path.json                                save results for viewer.html
 """
 
 import argparse
@@ -89,6 +90,35 @@ def run_gvl(args):
     return result
 
 
+def run_roboreward(args):
+    from reward_functions.roboreward import compute_roboreward, RoboRewardModel
+
+    model = RoboRewardModel()
+
+    print(f"\n{'='*60}")
+    print(f"RoboReward  [Qwen]")
+    print(f"{'='*60}")
+    print(f"  Video:       {args.video}")
+    print(f'  Instruction: "{args.instruction}"')
+    print(f"  Frames:      {args.num_frames}")
+    print()
+
+    start = time.time()
+    result = compute_roboreward(
+        video_path=args.video,
+        instruction=args.instruction,
+        num_frames=args.num_frames,
+        model=model,
+        verbose=True,
+    )
+    elapsed = time.time() - start
+
+    print(f"\n  Done in {elapsed:.1f}s")
+    print(f"  Progress: {[f'{v:.3f}' for v in result['progress_scores']]}")
+    result["model"] = model.model_name
+    return result
+
+
 def run_bruteforce_vlm(args):
     from backends import make_backend
     from reward_functions.bruteforce_vlm import compute_bruteforce_vlm
@@ -120,12 +150,12 @@ def run_bruteforce_vlm(args):
     return result
 
 
-def save_json(top_result, gvl_result, bruteforce_result, args, path):
+def save_json(top_result, roboreward_result, gvl_result, bruteforce_result, args, path):
     """Save results as JSON for the viewer.html visualiser."""
     import json
     data = {
         "instruction": args.instruction,
-        "backend": "TOPReward=Qwen | GVL=OpenAI | BruteforceVLM=OpenAI",
+        "backend": "TOPReward=Qwen | RoboReward=Qwen | GVL=OpenAI | BruteforceVLM=OpenAI",
         "num_frames": args.num_frames,
     }
     if top_result:
@@ -134,6 +164,12 @@ def save_json(top_result, gvl_result, bruteforce_result, args, path):
             "raw_log_probs": top_result["raw_log_probs"],
             "normalized_progress": top_result["normalized_progress"],
             "dense_rewards": top_result["dense_rewards"],
+        }
+    if roboreward_result:
+        data["roboreward"] = {
+            "model": roboreward_result.get("model"),
+            "raw_scores": roboreward_result["raw_scores"],
+            "progress_scores": roboreward_result["progress_scores"],
         }
     if gvl_result:
         data["gvl"] = {
@@ -168,8 +204,8 @@ def main():
                         help='Task instruction, e.g. "Pick up the cube"')
     parser.add_argument("--num-frames", type=int, default=10,
                         help="Frames to sample (default: 10)")
-    parser.add_argument("--method", default="topreward,gvl,bruteforce_vlm",
-                        help="Comma-separated list of methods to run: topreward,gvl,bruteforce_vlm (default: all)")
+    parser.add_argument("--method", default="topreward,roboreward,gvl,bruteforce_vlm",
+                        help="Comma-separated list of methods to run: topreward,roboreward,gvl,bruteforce_vlm (default: all)")
     parser.add_argument("--save-json", default=None, nargs="?", const="auto",
                         help="Save results as JSON (for viewer.html). Defaults to viewer_files/<video>.json")
 
@@ -184,7 +220,7 @@ def main():
         sys.exit(1)
 
     methods = [m.strip() for m in args.method.split(",")]
-    valid_methods = {"topreward", "gvl", "bruteforce_vlm"}
+    valid_methods = {"topreward", "roboreward", "gvl", "bruteforce_vlm"}
     unknown = set(methods) - valid_methods
     if unknown:
         print(f"Error: unknown method(s): {', '.join(sorted(unknown))}. Choose from: {', '.join(sorted(valid_methods))}", file=sys.stderr)
@@ -199,11 +235,15 @@ def main():
         sys.exit(1)
 
     top_result = None
+    roboreward_result = None
     gvl_result = None
     bruteforce_result = None
 
     if "topreward" in methods:
         top_result = run_topreward(args)
+
+    if "roboreward" in methods:
+        roboreward_result = run_roboreward(args)
 
     if "gvl" in methods:
         gvl_result = run_gvl(args)
@@ -218,6 +258,9 @@ def main():
     if top_result:
         from reward_functions.gvl import compute_voc
         print(f"  TOPReward VOC:      {compute_voc(top_result['normalized_progress']):.4f}")
+    if roboreward_result:
+        from reward_functions.gvl import compute_voc
+        print(f"  RoboReward VOC:     {compute_voc(roboreward_result['progress_scores']):.4f}")
     if gvl_result:
         print(f"  GVL VOC:            {gvl_result['voc']:.4f}")
     if bruteforce_result:
@@ -230,7 +273,7 @@ def main():
     if json_path is None or json_path == "auto":
         video_stem = os.path.splitext(os.path.basename(args.video))[0]
         json_path = os.path.join("viewer_files", video_stem + ".json")
-    save_json(top_result, gvl_result, bruteforce_result, args, json_path)
+    save_json(top_result, roboreward_result, gvl_result, bruteforce_result, args, json_path)
     print(f"\nJSON saved to: {json_path}")
 
     # Update manifest.json

@@ -5,6 +5,7 @@
 
 Reward functions you can run on your videos:
 - **[TOPReward](https://topreward.github.io/webpage/)** — from *TOPReward: Token Probabilities as Hidden Zero-Shot Rewards for Robotics* by [@jcoleharrison](https://github.com/jcoleharrison) , [@chinsengi](https://github.com/chinsengi) , UW
+- **[RoboReward](https://arxiv.org/abs/2601.00675)** — from *RoboReward: General-Purpose Vision-Language Reward Model for Robotics* by [@teetone](https://github.com/teetone) , NUS. Predicts discrete progress scores (1–5) converted to [0, 1] via `(score - 1) * 0.25`
 - **[Robometer](https://robometer.github.io/)** - from *Robometer: Scaling General-Purpose Robotic Reward Models via Trajectory Comparisons* by [@ygtkorkmaz](https://github.com/ygtkorkmaz) , [@aliang8](https://github.com/aliang8) , USC
 - **[Generative Value Learning (GVL)](https://arxiv.org/pdf/2411.04549)** — from *Vision Language Models are In-Context Value Learners*, Google DeepMind
 - **Brute Force** — at each frame, sends the video up to that point to the VLM and asks for a progress score between 0.0 and 1.0
@@ -20,16 +21,16 @@ Reward functions you can run on your videos:
 
 3. 
 
-* **Run `topreward`, `gvl`, and/or `bruteforce_vlm`** 
+* **Run `topreward`, `roboreward`, `gvl`, and/or `bruteforce_vlm`**
 
     Run the script to calculate reward functions on your video:
     ```
     python run_rewards.py --video myvideo.mp4 --instruction "create a tower of 5 cubes"
     ```
 
-   If you have an OpenAI API key, add the flags `--openai-api-key <your key>` and `--method topreward,gvl,bruteforce_vlm`.
+   If you have an OpenAI API key, add the flags `--openai-api-key <your key>` and `--method topreward,roboreward,gvl,bruteforce_vlm`.
 
-   If you don't have an OpenAI API key, add the flag `--method topreward`.
+   If you don't have an OpenAI API key, add the flag `--method topreward,roboreward`.
 
    This will probably take ~ 10 - 20 minutes, depending on your computer.
 
@@ -55,9 +56,9 @@ pip install -r requirements.txt
 ### 2. Install Qwen backend
 Requires ~15 GB disk (model weights) and ~16 GB unified/GPU memory.
 ```
-pip install torch torchvision transformers accelerate
+pip install torch torchvision transformers accelerate qwen-vl-utils
 ```
-This is used to run TOPReward.
+This is used to run TOPReward and RoboReward.
 ### 3. Get an OpenAI API key (optional)
 Create an [OpenAI API key](https://platform.openai.com/api-keys).
 
