@@ -261,9 +261,7 @@ function buildChart(canvas, data) {
     });
   }
 
-  const titleText = data.instruction
-    ? `"${data.instruction}"${data.backend ? `  —  ${data.backend}` : ''}`
-    : null;
+  const titleText = data.instruction ? `"${data.instruction}"` : null;
 
   return new Chart(canvas, {
     type: 'line',
