@@ -5,8 +5,8 @@
 
 Reward functions you can run on your videos:
 - **[TOPReward](https://topreward.github.io/webpage/)** — from *TOPReward: Token Probabilities as Hidden Zero-Shot Rewards for Robotics* by [@jcoleharrison](https://github.com/jcoleharrison) , [@chinsengi](https://github.com/chinsengi) , UW
-- **[RoboReward](https://arxiv.org/abs/2601.00675)** — from *RoboReward: General-Purpose Vision-Language Reward Model for Robotics* by [@teetone](https://github.com/teetone) , NUS. Predicts discrete progress scores (1–5) converted to [0, 1] via `(score - 1) * 0.25`
 - **[Robometer](https://robometer.github.io/)** - from *Robometer: Scaling General-Purpose Robotic Reward Models via Trajectory Comparisons* by [@ygtkorkmaz](https://github.com/ygtkorkmaz) , [@aliang8](https://github.com/aliang8) , USC
+- **[RoboReward](https://arxiv.org/abs/2601.00675)** — from *RoboReward: General-Purpose Vision-Language Reward Model for Robotics* by [@teetone](https://github.com/teetone), [@ajwagenmaker](https://github.com/ajwagenmaker), [@kpertsch](https://github.com/kpertsch), Stanford & Berkeley 
 - **[Generative Value Learning (GVL)](https://arxiv.org/pdf/2411.04549)** — from *Vision Language Models are In-Context Value Learners*, Google DeepMind
 - **Brute Force** — at each frame, sends the video up to that point to the VLM and asks for a progress score between 0.0 and 1.0
 
@@ -14,10 +14,10 @@ Reward functions you can run on your videos:
 
 # How to run on your own videos #
 
-1. **Create an MP4 video of robot manipulation** ([Example](https://github.com/philfung/reward-scope/blob/main/viewer_files/clothesfolding1.mp4))
-    .  If possible, downsize it to 480p, as the image pixels are passed as tokens.
+1. Create an MP4 video of robot manipulation.
+    (Downsize it to 480p if possible, as image pixels are passed as tokens)
 
-2. **Run the steps in the *[Installation](https://github.com/philfung/reward-scope?tab=readme-ov-file#installation)* section**. 
+2. Run the steps in the *Installation* section. 
 
 3. 
 
@@ -36,7 +36,7 @@ Reward functions you can run on your videos:
 
 * **Run `robometer`**
 
-     Follow instructions [here](https://github.com/philfung/robometer?tab=readme-ov-file#usage).  This will compute the robometer reward on the same video file and populate this github repo with the data.
+     Compute the robometer reward on the same video file and populate this github repo with the results by following the instructions [here](https://github.com/philfung/robometer?tab=readme-ov-file#usage).
 
 
 4. View the results in your browser:
