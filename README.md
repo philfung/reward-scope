@@ -19,7 +19,7 @@ Reward functions you can run on your videos:
 
 2. Run the steps in the *Installation* section. 
 
-3. 
+3. Run reward algorithms on your video:
 
 * **Run `topreward`, `roboreward`, `gvl`, and/or `bruteforce_vlm`**
 
