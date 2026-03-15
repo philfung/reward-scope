@@ -14,48 +14,42 @@ Reward functions you can run on your videos:
 
 # How to run on your own videos #
 
-1. Create an MP4 video of robot manipulation.
-    (Downsize it to 480p if possible, as image pixels are passed as tokens)
+1. **Create an MP4 video of robot manipulation ([example](https://philfung.github.io/rewardscope/viewer_files/clothesfolding1.mp4)).**
+   For efficiency, please downsize the file to 480p, as image pixels are passed as tokens.
 
-2. Run the steps in the *Installation* section. 
+2. **Install prerequisites**
+   ```
+   virtualenv venv
+   . venv/bin/activate
+   pip install -r requirements.txt
+   pip install torch torchvision transformers accelerate qwen-vl-utils
+   ``` 
 
-3. Run reward algorithms on your video:
+4. **Run the reward algorithms on your video:**
 
     A. **Run `topreward`, `roboreward`, `gvl`, and/or `bruteforce_vlm`**
 
      Run the script to calculate reward functions on your video:
 
      ```
-     python run_rewards.py --video myvideo.mp4 --instruction "create a tower of 5 cubes"
+     python run_rewards.py --method topreward,roboreward,gvl,bruteforce_vlm --video <myvideo.mp4> --instruction <instructions e.g. `create a tower of 5 cubes`>
      ```
 
-     If you have an OpenAI API key, add the flags `--openai-api-key <your key>` and `--method topreward,roboreward,gvl,bruteforce_vlm`.
+     Notes: 
+     * If you are running `gvl` or `bruteforce_vlm`, you must include an [OpenAI API key](https://platform.openai.com/api-keys):
+     ```
+     --openai-api-key <your key>
+     ```
 
-     If you don't have an OpenAI API key, add the flag `--method topreward,roboreward`.
-
-     * Note on Memory: For `topreward`, you are downloading ~15GB in model weights.  For `roboreward`, you are downloading ~17GB in model weights.  You'll need ~16GB+ unified/GPU mem to run either.
+     * If you are running `topreward` and/or `roboreward`, you'll need at least 16GB unified/GPU memory.
 
     B. **Run `robometer`**
 
-     Compute the robometer reward on the same video file [here](https://github.com/philfung/robometer?tab=readme-ov-file#usage).
+     Compute the reward using the custom script [here](https://github.com/philfung/robometer?tab=readme-ov-file#usage).
 
 
-5. View the results in your browser:
+5. **View the results in your browser:**
    ```
    ./run_viewer.sh
    ```
 
-## Installation
-
-### 1. Install Python packages
-```
-virtualenv venv
-. venv/bin/activate
-pip install -r requirements.txt
-pip install torch torchvision transformers accelerate qwen-vl-utils
-```
-
-### 2. Get an OpenAI API key (optional)
-Create an [OpenAI API key](https://platform.openai.com/api-keys).
-
-This is used for running GVL and Brute Force.
