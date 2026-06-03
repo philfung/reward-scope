@@ -1,6 +1,6 @@
 {
   "instruction": "create a tower of 5 cubes",
-  "backend": "TOPReward=Qwen3VL-8B | Robometer=Qwen3VL-4B-RBM-1M | GVL=GPT-4o-mini | BruteforceVLM=GPT-4o-mini",
+  "backend": "TOPReward=Qwen | RoboReward=Qwen | GVL=OpenAI | BruteforceVLM=OpenAI | RoboDopamine=Qwen",
   "num_frames": 10,
   "topreward": {
     "model": "Qwen3VL-8B",
@@ -28,7 +28,6 @@
       0.8668926533611343,
       0.9999999976858758
     ],
-    
     "dense_rewards": [
       1.0,
       2.0,
@@ -42,7 +41,7 @@
       2.0
     ]
   },
-    "roboreward": {
+  "roboreward": {
     "model": "teetone/RoboReward-8B",
     "raw_scores": [
       1.0,
@@ -146,6 +145,57 @@
       0.828643368350135,
       0.8169362942377726,
       0.8617520332336426
+    ]
+  },
+  "robodopamine": {
+    "model": "tanhuajie2001/Robo-Dopamine-GRM-2.0-8B-Preview",
+    "progress_scores": [
+      0.0,
+      0.18466666666666667,
+      0.04466666666666668,
+      0.07800000000000001,
+      0.29,
+      0.7703333333333333,
+      0.180007,
+      0.7323256643333332,
+      0.8019109149166667,
+      1.0
+    ],
+    "progress_forward": [
+      0.0,
+      0.2,
+      0.1,
+      0.1,
+      0.25,
+      0.75,
+      0.25,
+      0.75,
+      0.8,
+      1.0
+    ],
+    "progress_incremental": [
+      0.0,
+      0.2,
+      0.0,
+      0.1,
+      0.37,
+      0.8109999999999999,
+      0.09002100000000002,
+      0.696976993,
+      0.7727327447500001,
+      1.0
+    ],
+    "progress_backward": [
+      0.0,
+      0.15400000000000003,
+      0.03400000000000003,
+      0.03400000000000003,
+      0.25,
+      0.75,
+      0.19999999999999996,
+      0.75,
+      0.833,
+      1.0
     ]
   }
 }

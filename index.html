@@ -105,6 +105,7 @@
     .pair-chip.green  { color: #40a070; border-color: rgba(74,200,140,0.3);  background: rgba(74,200,140,0.08); }
     .pair-chip.purple { color: #9060c0; border-color: rgba(160,100,220,0.3); background: rgba(160,100,220,0.08); }
     .pair-chip.pumpkin { color: #c05820; border-color: rgba(245,118,26,0.3); background: rgba(245,118,26,0.08); }
+    .pair-chip.deeppink { color: #FF1493; border-color: rgba(255,20,147,0.3); background: rgba(255,20,147,0.08); }
     .chip-model { opacity: 0.6; font-size: 9px; }
 
     /* ── Main viewer ── */
@@ -155,7 +156,8 @@ async function scanPairs() {
                hasGvl: !!d.gvl, gvlModel: d.gvl?.model || null,
                hasBruteforce: !!d.bruteforce_vlm, bruteforceModel: d.bruteforce_vlm?.model || null,
                hasRobometer: !!d.robometer, robometerModel: d.robometer?.model || null,
-               hasRoboreward: !!d.roboreward, roborewardModel: d.roboreward?.model || null };
+               hasRoboreward: !!d.roboreward, roborewardModel: d.roboreward?.model || null,
+               hasRobodopamine: !!d.robodopamine, robodopamineModel: d.robodopamine?.model || null };
     } catch { return p; }
   }));
 }
@@ -257,6 +259,18 @@ function buildChart(canvas, data) {
       borderColor: '#4AC48A', backgroundColor: 'rgba(74,196,138,0.07)',
       borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
       pointBackgroundColor: '#4AC48A', borderDash: [3, 3],
+      tension: 0, fill: true, spanGaps: false,
+    });
+  }
+  if (data.robodopamine) {
+    datasets.push({
+      label: 'RoboDopamine',
+      _full: makePoints(data.robodopamine.progress_scores),
+      data: [],
+      yAxisID: 'y',
+      borderColor: '#FF1493', backgroundColor: 'rgba(255,20,147,0.07)',
+      borderWidth: 2.5, pointRadius: 4, pointHoverRadius: 6,
+      pointBackgroundColor: '#FF1493',
       tension: 0, fill: true, spanGaps: false,
     });
   }
@@ -472,6 +486,7 @@ function App() {
                   {pair.hasBruteforce && <span className="pair-chip green">BruteforceVLM{pair.bruteforceModel && <span className="chip-model"> · {pair.bruteforceModel}</span>}</span>}
                   {pair.hasRoboreward  && <span className="pair-chip pumpkin">RoboReward{pair.roborewardModel && <span className="chip-model"> · {pair.roborewardModel}</span>}</span>}
                   {pair.hasRobometer  && <span className="pair-chip purple">Robometer{pair.robometerModel && <span className="chip-model"> · {pair.robometerModel}</span>}</span>}
+                  {pair.hasRobodopamine && <span className="pair-chip deeppink">RoboDopamine{pair.robodopamineModel && <span className="chip-model"> · {pair.robodopamineModel}</span>}</span>}
                 </div>
               </div>
             ))}

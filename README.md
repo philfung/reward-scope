@@ -4,11 +4,12 @@
 
 
 Reward functions you can run on your videos:
-- **[TOPReward](https://topreward.github.io/webpage/)** — from *TOPReward: Token Probabilities as Hidden Zero-Shot Rewards for Robotics* by [@jcoleharrison](https://github.com/jcoleharrison) , [@chinsengi](https://github.com/chinsengi) , UW
-- **[Robometer](https://robometer.github.io/)** - from *Robometer: Scaling General-Purpose Robotic Reward Models via Trajectory Comparisons* by [@ygtkorkmaz](https://github.com/ygtkorkmaz) , [@aliang8](https://github.com/aliang8) , USC
-- **[RoboReward](https://arxiv.org/abs/2601.00675)** — from *RoboReward: General-Purpose Vision-Language Reward Model for Robotics* by [@teetone](https://github.com/teetone), [@ajwagenmaker](https://github.com/ajwagenmaker), [@kpertsch](https://github.com/kpertsch), Stanford & Berkeley 
-- **[Generative Value Learning (GVL)](https://arxiv.org/pdf/2411.04549)** — from *Vision Language Models are In-Context Value Learners*, Google DeepMind
 - **Brute Force** — at each frame, sends the video up to that point to the VLM and asks for a progress score between 0.0 and 1.0
+- **[Generative Value Learning (GVL)](https://arxiv.org/pdf/2411.04549)** (Nov 2024) — from *Vision Language Models are In-Context Value Learners*, Google DeepMind
+- **[Robo-Dopamine](https://robo-dopamine.github.io/)** (Dec 2025) — from *Robo-Dopamine: General Process Reward Modeling for High-Precision Robotic Manipulation* by [@FlagOpen](https://github.com/FlagOpen), CVPR 2026
+- **[Robometer](https://robometer.github.io/)** (Mar 2026) — from *Robometer: Scaling General-Purpose Robotic Reward Models via Trajectory Comparisons* by [@ygtkorkmaz](https://github.com/ygtkorkmaz) , [@aliang8](https://github.com/aliang8) , USC
+- **[RoboReward](https://arxiv.org/abs/2601.00675)** (Jan 2026) — from *RoboReward: General-Purpose Vision-Language Reward Model for Robotics* by [@teetone](https://github.com/teetone), [@ajwagenmaker](https://github.com/ajwagenmaker), [@kpertsch](https://github.com/kpertsch), Stanford & Berkeley 
+- **[TOPReward](https://topreward.github.io/webpage/)** (Feb 2026) — from *TOPReward: Token Probabilities as Hidden Zero-Shot Rewards for Robotics* by [@jcoleharrison](https://github.com/jcoleharrison) , [@chinsengi](https://github.com/chinsengi) , UW
 
 ...and easy to add more!
 
@@ -27,12 +28,12 @@ Reward functions you can run on your videos:
 
 4. **Run the reward algorithms on your video:**
 
-    A. **Run `topreward`, `roboreward`, `gvl`, and/or `bruteforce_vlm`**
+    A. **Run `bruteforce_vlm`, `gvl`, `robodopamine`, `roboreward`, and/or `topreward`**
 
      Run the script to calculate reward functions on your video:
 
      ```
-     python run_rewards.py --method topreward,roboreward,gvl,bruteforce_vlm --video <myvideo.mp4> --instruction <instructions e.g. `create a tower of 5 cubes`>
+     python run_rewards.py --method bruteforce_vlm,gvl,robodopamine,roboreward,topreward --video <myvideo.mp4> --instruction <instructions e.g. `create a tower of 5 cubes`>
      ```
 
      Notes: 
@@ -41,7 +42,7 @@ Reward functions you can run on your videos:
      --openai-api-key <your key>
      ```
 
-     * If you are running `topreward` and/or `roboreward`, you'll need at least 16GB unified/GPU memory.
+     * If you are running `topreward`, `roboreward`, and/or `robodopamine`, you'll need at least 16GB unified/GPU memory.
 
     B. **Run `robometer`**
 
