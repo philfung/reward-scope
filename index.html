@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -9,10 +10,16 @@
   <title>RewardScope Viewer</title>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.27.0/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       background: #0d0d1a;
@@ -20,7 +27,13 @@
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       min-height: 100vh;
     }
-    #root { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+    #root {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
 
     /* ── Header ── */
     .header {
@@ -29,496 +42,648 @@
       align-items: center;
       gap: 12px;
       padding: 10px 20px;
-      background: rgba(255,255,255,0.025);
-      border-bottom: 1px solid rgba(255,255,255,0.07);
+      background: rgba(255, 255, 255, 0.025);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
     }
-    .header h1 { font-size: 17px; font-weight: 600; color: #c0c0e8; letter-spacing: 0.3px; }
+
+    .header h1 {
+      font-size: 17px;
+      font-weight: 600;
+      color: #c0c0e8;
+      letter-spacing: 0.3px;
+    }
+
     .header-badge {
-      font-size: 11px; padding: 2px 8px;
-      background: rgba(80,80,200,0.18); border: 1px solid rgba(80,80,200,0.35);
-      border-radius: 10px; color: #9090cc;
+      font-size: 11px;
+      padding: 2px 8px;
+      background: rgba(80, 80, 200, 0.18);
+      border: 1px solid rgba(80, 80, 200, 0.35);
+      border-radius: 10px;
+      color: #9090cc;
     }
-    .header-sub { font-size: 12px; color: #5555aa; font-style: italic; margin-left: 4px; }
+
+    .header-sub {
+      font-size: 12px;
+      color: #5555aa;
+      font-style: italic;
+      margin-left: 4px;
+    }
 
     /* ── Center panel (loading / select / error) ── */
     .center-panel {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 40px 20px; gap: 28px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      gap: 28px;
     }
-    .panel-title { font-size: 20px; font-weight: 400; color: #8888c0; }
-    .panel-subtitle { font-size: 13px; color: #44446a; text-align: center; line-height: 1.6; }
+
+    .panel-title {
+      font-size: 20px;
+      font-weight: 400;
+      color: #8888c0;
+    }
+
+    .panel-subtitle {
+      font-size: 13px;
+      color: #44446a;
+      text-align: center;
+      line-height: 1.6;
+    }
+
     .panel-subtitle code {
-      background: rgba(255,255,255,0.05); padding: 2px 7px;
-      border-radius: 4px; font-size: 11px; color: #7080aa;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #7080aa;
     }
+
     .error-box {
-      background: rgba(200,60,60,0.08); border: 1px solid rgba(200,60,60,0.25);
-      border-radius: 10px; padding: 18px 24px; max-width: 480px;
-      text-align: center; color: #cc7777; font-size: 14px; line-height: 1.6;
+      background: rgba(200, 60, 60, 0.08);
+      border: 1px solid rgba(200, 60, 60, 0.25);
+      border-radius: 10px;
+      padding: 18px 24px;
+      max-width: 480px;
+      text-align: center;
+      color: #cc7777;
+      font-size: 14px;
+      line-height: 1.6;
     }
+
     .spinner {
-      width: 32px; height: 32px;
-      border: 3px solid rgba(255,255,255,0.08);
-      border-top-color: rgba(100,100,220,0.5);
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(255, 255, 255, 0.08);
+      border-top-color: rgba(100, 100, 220, 0.5);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
 
     /* ── Pairs grid ── */
-    .pairs-grid { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; max-width: 900px; }
+    .pairs-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+      max-width: 900px;
+    }
+
     .pair-card {
-      display: flex; flex-direction: column; gap: 10px;
-      padding: 20px 24px; min-width: 220px; max-width: 300px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.10);
-      border-radius: 14px; cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 20px 24px;
+      min-width: 220px;
+      max-width: 300px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 14px;
+      cursor: pointer;
       transition: border-color 0.18s, background 0.18s, transform 0.12s;
       user-select: none;
     }
+
     .pair-card:hover {
-      border-color: rgba(100,100,230,0.45);
-      background: rgba(100,100,230,0.06);
+      border-color: rgba(100, 100, 230, 0.45);
+      background: rgba(100, 100, 230, 0.06);
       transform: translateY(-2px);
     }
-    .pair-card:active { transform: translateY(0); }
+
+    .pair-card:active {
+      transform: translateY(0);
+    }
+
     .pair-name {
-      font-size: 14px; font-weight: 600; color: #b0b0e0;
+      font-size: 14px;
+      font-weight: 600;
+      color: #b0b0e0;
       word-break: break-all;
     }
+
     .pair-instruction {
-      font-size: 12px; color: #6666a0; font-style: italic;
+      font-size: 12px;
+      color: #6666a0;
+      font-style: italic;
       line-height: 1.4;
     }
+
     .pair-meta {
-      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 2px;
     }
+
     .pair-chip {
-      font-size: 10px; padding: 2px 7px;
-      border-radius: 8px; color: #7070a0;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 8px;
+      color: #7070a0;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
-    .pair-chip.orange { color: #cc2020; border-color: rgba(220,40,40,0.3);   background: rgba(220,40,40,0.08); }
-    .pair-chip.blue   { color: #4070a0; border-color: rgba(74,144,217,0.3);  background: rgba(74,144,217,0.08); }
-    .pair-chip.green  { color: #40a070; border-color: rgba(74,200,140,0.3);  background: rgba(74,200,140,0.08); }
-    .pair-chip.purple { color: #9060c0; border-color: rgba(160,100,220,0.3); background: rgba(160,100,220,0.08); }
-    .pair-chip.pumpkin { color: #c05820; border-color: rgba(245,118,26,0.3); background: rgba(245,118,26,0.08); }
-    .pair-chip.deeppink { color: #FF1493; border-color: rgba(255,20,147,0.3); background: rgba(255,20,147,0.08); }
-    .chip-model { opacity: 0.6; font-size: 9px; }
+
+    .pair-chip.orange {
+      color: #cc2020;
+      border-color: rgba(220, 40, 40, 0.3);
+      background: rgba(220, 40, 40, 0.08);
+    }
+
+    .pair-chip.blue {
+      color: #4070a0;
+      border-color: rgba(74, 144, 217, 0.3);
+      background: rgba(74, 144, 217, 0.08);
+    }
+
+    .pair-chip.green {
+      color: #40a070;
+      border-color: rgba(74, 200, 140, 0.3);
+      background: rgba(74, 200, 140, 0.08);
+    }
+
+    .pair-chip.purple {
+      color: #9060c0;
+      border-color: rgba(160, 100, 220, 0.3);
+      background: rgba(160, 100, 220, 0.08);
+    }
+
+    .pair-chip.pumpkin {
+      color: #c05820;
+      border-color: rgba(245, 118, 26, 0.3);
+      background: rgba(245, 118, 26, 0.08);
+    }
+
+    .pair-chip.deeppink {
+      color: #FF1493;
+      border-color: rgba(255, 20, 147, 0.3);
+      background: rgba(255, 20, 147, 0.08);
+    }
+
+    .chip-model {
+      opacity: 0.6;
+      font-size: 9px;
+    }
 
     /* ── Main viewer ── */
-    .main-view { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-    .video-section {
-      flex: 0 0 auto; display: flex;
-      justify-content: center; align-items: center;
-      background: #000; max-height: 35vh;
+    .main-view {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
-    .video-section video { max-height: 35vh; max-width: 100%; display: block; }
-    .chart-section { flex: 1; min-height: 0; padding: 8px 12px; position: relative; }
-    .chart-wrapper { position: relative; width: 100%; height: 100%; }
+
+    .video-section {
+      flex: 0 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #000;
+      max-height: 35vh;
+    }
+
+    .video-section video {
+      max-height: 35vh;
+      max-width: 100%;
+      display: block;
+    }
+
+    .chart-section {
+      flex: 1;
+      min-height: 0;
+      padding: 8px 12px;
+      position: relative;
+    }
+
+    .chart-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
 
     /* ── Back button ── */
     .back-btn {
-      position: fixed; bottom: 14px; right: 16px;
-      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
-      color: #7070a0; padding: 5px 13px; border-radius: 8px;
-      cursor: pointer; font-size: 12px; z-index: 10;
+      position: fixed;
+      bottom: 14px;
+      right: 16px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #7070a0;
+      padding: 5px 13px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      z-index: 10;
       transition: background 0.15s, color 0.15s;
     }
-    .back-btn:hover { background: rgba(255,255,255,0.11); color: #a0a0c8; }
+
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 0.11);
+      color: #a0a0c8;
+    }
   </style>
 </head>
+
 <body>
-<div id="root"></div>
+  <div id="root"></div>
 
-<script type="text/babel">
-const { useState, useEffect, useRef } = React;
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
 
-/* ── Scan viewer_files/ for .mp4/.json pairs via manifest.json ── */
-async function scanPairs() {
-  const res = await fetch('viewer_files/manifest.json', { cache: 'no-store' });
-  if (!res.ok) throw new Error(`HTTP ${res.status} fetching viewer_files/manifest.json`);
-  const bases = await res.json(); // expected: array of base names, e.g. ["run1", "run2"]
+    /* ── Scan viewer_files/ for .mp4/.json pairs via manifest.json ── */
+    async function scanPairs() {
+      const res = await fetch('viewer_files/manifest.json', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status} fetching viewer_files/manifest.json`);
+      const bases = await res.json(); // expected: array of base names, e.g. ["run1", "run2"]
 
-  const pairs = [...bases]
-    .sort()
-    .map(base => ({ name: base, mp4: `viewer_files/${base}.mp4`, json: `viewer_files/${base}.json` }));
+      const pairs = [...bases]
+        .sort()
+        .map(base => ({ name: base, mp4: `viewer_files/${base}.mp4`, json: `viewer_files/${base}.json` }));
 
-  // Pre-fetch JSON metadata for richer cards
-  return Promise.all(pairs.map(async p => {
-    try {
-      const r = await fetch(p.json, { cache: 'no-store' });
-      const d = await r.json();
-      return { ...p, instruction: d.instruction || null, backend: d.backend || null,
-               hasTopreward: !!d.topreward, toprewardModel: d.topreward?.model || null,
-               hasGvl: !!d.gvl, gvlModel: d.gvl?.model || null,
-               hasBruteforce: !!d.bruteforce_vlm, bruteforceModel: d.bruteforce_vlm?.model || null,
-               hasRobometer: !!d.robometer, robometerModel: d.robometer?.model || null,
-               hasRoboreward: !!d.roboreward, roborewardModel: d.roboreward?.model || null,
-               hasRobodopamine: !!d.robodopamine, robodopamineModel: d.robodopamine?.model || null };
-    } catch { return p; }
-  }));
-}
-
-/* ── Vertical time-line plugin ── */
-const vLinePlugin = {
-  id: 'vLine',
-  afterDraw(chart) {
-    const t = chart._videoT;
-    if (t == null || !isFinite(t) || t <= 0) return;
-    const ca = chart.chartArea;
-    if (!ca) return;
-    const { ctx } = chart;
-    const { top, bottom, left, right } = ca;
-    const x = left + t * (right - left);
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(x, top); ctx.lineTo(x, bottom);
-    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([4, 3]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    const pct = Math.round(t * 100);
-    ctx.fillStyle = 'rgba(190,190,230,0.65)';
-    ctx.font = 'bold 11px system-ui';
-    const isRight = x > (left + right) / 2;
-    ctx.textAlign = isRight ? 'right' : 'left';
-    ctx.fillText(pct + '%', x + (isRight ? -5 : 5), top + 13);
-    ctx.restore();
-  },
-};
-
-/* ── Build Chart.js instance ── */
-function buildChart(canvas, data) {
-  const makePoints = arr => {
-    const N = arr.length;
-    if (N === 0) return [];
-    if (N === 1) return [{ x: 0, y: arr[0] }];
-    return arr.map((y, i) => ({ x: i / (N - 1), y }));
-  };
-
-  const datasets = [];
-  if (data.topreward) {
-    datasets.push({
-      label: 'TOPReward',
-      _full: makePoints(data.topreward.normalized_progress),
-      data: [],
-      yAxisID: 'y',
-      borderColor: '#DC2828', backgroundColor: 'rgba(220,40,40,0.10)',
-      borderWidth: 2.5, pointRadius: 4, pointHoverRadius: 6,
-      pointBackgroundColor: '#DC2828', tension: 0, fill: true, spanGaps: false,
-    });
-  }
-  if (data.robometer) {
-    datasets.push({
-      label: 'Robometer',
-      _full: makePoints(data.robometer.progress_scores),
-      data: [],
-      yAxisID: 'y',
-      borderColor: '#A064DC', backgroundColor: 'rgba(160,100,220,0.07)',
-      borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
-      pointBackgroundColor: '#A064DC', borderDash: [8, 3],
-      tension: 0, fill: true, spanGaps: false,
-    });
-  }
-  if (data.roboreward) {
-    datasets.push({
-      label: 'RoboReward',
-      _full: makePoints(data.roboreward.progress_scores),
-      data: [],
-      yAxisID: 'y',
-      borderColor: '#F5761A', backgroundColor: 'rgba(245,118,26,0.07)',
-      borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
-      pointBackgroundColor: '#F5761A', borderDash: [5, 3],
-      tension: 0, fill: true, spanGaps: false,
-    });
-  }
-  if (data.gvl) {
-    datasets.push({
-      label: `GVL`,
-      _full: makePoints(data.gvl.progress_scores),
-      data: [],
-      yAxisID: 'y',
-      borderColor: '#4A90D9', backgroundColor: 'rgba(74,144,217,0.08)',
-      borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
-      pointBackgroundColor: '#4A90D9', borderDash: [6, 3],
-      tension: 0, fill: true, spanGaps: false,
-    });
-  }
-  if (data.bruteforce_vlm) {
-    datasets.push({
-      label: 'BruteforceVLM',
-      _full: makePoints(data.bruteforce_vlm.progress_scores),
-      data: [],
-      yAxisID: 'y',
-      borderColor: '#4AC48A', backgroundColor: 'rgba(74,196,138,0.07)',
-      borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
-      pointBackgroundColor: '#4AC48A', borderDash: [3, 3],
-      tension: 0, fill: true, spanGaps: false,
-    });
-  }
-  if (data.robodopamine) {
-    datasets.push({
-      label: 'RoboDopamine',
-      _full: makePoints(data.robodopamine.progress_scores),
-      data: [],
-      yAxisID: 'y',
-      borderColor: '#FF1493', backgroundColor: 'rgba(255,20,147,0.07)',
-      borderWidth: 2.5, pointRadius: 4, pointHoverRadius: 6,
-      pointBackgroundColor: '#FF1493', borderDash: [4, 4],
-      tension: 0, fill: true, spanGaps: false,
-    });
-  }
-
-  const titleText = data.instruction ? `"${data.instruction}"` : null;
-
-  return new Chart(canvas, {
-    type: 'line',
-    plugins: [vLinePlugin],
-    data: { datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      animation: false, parsing: false, normalized: true,
-      scales: {
-        x: {
-          type: 'linear', min: 0, max: 1,
-          title: { display: true, text: 'Normalised Time', color: '#7777a0', font: { size: 12 } },
-          ticks: { color: '#6666a0', stepSize: 0.1, maxRotation: 0 },
-          grid: { color: 'rgba(255,255,255,0.05)' },
-          border: { color: 'rgba(255,255,255,0.10)' },
-        },
-        y: {
-          type: 'linear', min: 0, max: 1,
-          title: { display: true, text: 'Progress Score (0–1)', color: '#7777a0', font: { size: 12 } },
-          ticks: { color: '#6666a0', stepSize: 0.1 },
-          grid: { color: 'rgba(255,255,255,0.05)' },
-          border: { color: 'rgba(255,255,255,0.10)' },
-        },
-
-      },
-      plugins: {
-        legend: { labels: { color: '#c0c0e0', font: { size: 13 }, usePointStyle: true, padding: 16 } },
-        title: titleText
-          ? { display: true, text: titleText, color: '#8888b0', font: { size: 13, style: 'italic' }, padding: { top: 2, bottom: 6 } }
-          : { display: false },
-        tooltip: {
-          mode: 'index', intersect: false,
-          backgroundColor: 'rgba(10,10,28,0.92)',
-          titleColor: '#c0c0e8', bodyColor: '#9090c0',
-          borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
-          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(3)}` },
-        },
-      },
-      interaction: { mode: 'index', intersect: false },
-    },
-  });
-}
-
-/* ── App ── */
-function App() {
-  // phase: 'loading' | 'select' | 'viewer' | 'error'
-  const [phase, setPhase]           = useState('loading');
-  const [pairs, setPairs]           = useState([]);
-  const [error, setError]           = useState('');
-  const [activePair, setActivePair] = useState(null);
-  const [data, setData]             = useState(null);
-
-  const videoRef  = useRef(null);
-  const canvasRef = useRef(null);
-  const chartRef  = useRef(null);
-  const rafRef    = useRef(null);
-  const dataRef   = useRef(null);
-  dataRef.current = data;  // keep fresh in RAF closure
-
-  /* Scan on mount */
-  useEffect(() => {
-    scanPairs()
-      .then(found => {
-        setPairs(found);
-        if (found.length === 0) {
-          setError('No matching .mp4 / .json pairs found in viewer_files/');
-          setPhase('error');
-        } else {
-          setPhase('select');
-        }
-      })
-      .catch(err => { setError(err.message); setPhase('error'); });
-  }, []);
-
-  /* Load a pair */
-  const loadPair = async pair => {
-    try {
-      const res = await fetch(pair.json, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const d = await res.json();
-      setData(d);
-      setActivePair(pair);
-      setPhase('viewer');
-    } catch (err) {
-      setError(`Failed to load ${pair.name}: ${err.message}`);
-      setPhase('error');
+      // Pre-fetch JSON metadata for richer cards
+      return Promise.all(pairs.map(async p => {
+        try {
+          const r = await fetch(p.json, { cache: 'no-store' });
+          const d = await r.json();
+          return {
+            ...p, instruction: d.instruction || null, backend: d.backend || null,
+            hasTopreward: !!d.topreward, toprewardModel: d.topreward?.model || null,
+            hasGvl: !!d.gvl, gvlModel: d.gvl?.model || null,
+            hasBruteforce: !!d.bruteforce_vlm, bruteforceModel: d.bruteforce_vlm?.model || null,
+            hasRobometer: !!d.robometer, robometerModel: d.robometer?.model || null,
+            hasRoboreward: !!d.roboreward, roborewardModel: d.roboreward?.model || null,
+            hasRobodopamine: !!d.robodopamine, robodopamineModel: d.robodopamine?.model || null
+          };
+        } catch { return p; }
+      }));
     }
-  };
 
-  const goBack = () => {
-    if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
-    setData(null);
-    setActivePair(null);
-    setPhase('select');
-  };
+    /* ── Vertical time-line plugin ── */
+    const vLinePlugin = {
+      id: 'vLine',
+      afterDraw(chart) {
+        const t = chart._videoT;
+        if (t == null || !isFinite(t) || t <= 0) return;
+        const ca = chart.chartArea;
+        if (!ca) return;
+        const { ctx } = chart;
+        const { top, bottom, left, right } = ca;
+        const x = left + t * (right - left);
 
-  /* Auto-play video when a pair is loaded */
-  useEffect(() => {
-    if (!activePair || !videoRef.current) return;
-    const video = videoRef.current;
-    const play = () => video.play().catch(() => {});
-    video.addEventListener('canplay', play, { once: true });
-    return () => video.removeEventListener('canplay', play);
-  }, [activePair]);
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(x, top); ctx.lineTo(x, bottom);
+        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
 
-  /* Build/rebuild chart when data arrives */
-  useEffect(() => {
-    if (!data || !canvasRef.current) return;
-    if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
-    chartRef.current = buildChart(canvasRef.current, data);
-    return () => { if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; } };
-  }, [data]);
-
-  /* Continuous RAF loop — reads live refs */
-  useEffect(() => {
-    let lastT = -1;
-    const tick = () => {
-      const chart = chartRef.current;
-      const video = videoRef.current;
-      const d     = dataRef.current;
-      if (chart && video && d) {
-        const dur = video.duration;
-        const t   = isFinite(dur) && dur > 0 ? video.currentTime / dur : 0;
-        if (t !== lastT) {
-          lastT = t;
-          chart._videoT = t;
-          chart.data.datasets.forEach(ds => {
-            if (!ds._full || ds._full.length === 0) return;
-            const full = ds._full;
-            const N    = full.length;
-            if (N === 1) { ds.data = [full[0]]; return; }
-            const tScaled = t * (N - 1);
-            const idx     = Math.min(Math.floor(tScaled), N - 1);
-            const frac    = tScaled - idx;
-            const visible = full.slice(0, idx + 1);
-            if (idx < N - 1 && frac > 0.001) {
-              const p0 = full[idx], p1 = full[idx + 1];
-              visible.push({ x: p0.x + frac * (p1.x - p0.x), y: p0.y + frac * (p1.y - p0.y) });
-            }
-            ds.data = visible;
-          });
-          chart.update('none');
-        }
-      }
-      rafRef.current = requestAnimationFrame(tick);
+        const pct = Math.round(t * 100);
+        ctx.fillStyle = 'rgba(190,190,230,0.65)';
+        ctx.font = 'bold 11px system-ui';
+        const isRight = x > (left + right) / 2;
+        ctx.textAlign = isRight ? 'right' : 'left';
+        ctx.fillText(pct + '%', x + (isRight ? -5 : 5), top + 13);
+        ctx.restore();
+      },
     };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, []);
 
-  /* ── Render ── */
-  return (
-    <>
-      <div className="header">
-        <h1>RewardScope</h1>
-        <span className="header-badge">Reward Visualiser</span>
-        {activePair && data?.instruction && (
-          <span className="header-sub">"{data.instruction}"</span>
-        )}
-      </div>
+    /* ── Build Chart.js instance ── */
+    function buildChart(canvas, data) {
+      const makePoints = arr => {
+        const N = arr.length;
+        if (N === 0) return [];
+        if (N === 1) return [{ x: 0, y: arr[0] }];
+        return arr.map((y, i) => ({ x: i / (N - 1), y }));
+      };
 
-      {/* Loading */}
-      {phase === 'loading' && (
-        <div className="center-panel">
-          <div className="spinner" />
-          <p className="panel-title" style={{ fontSize: 15, color: '#5555aa' }}>
-            Scanning viewer_files/…
-          </p>
-        </div>
-      )}
+      const datasets = [];
+      if (data.topreward) {
+        datasets.push({
+          label: 'TOPReward',
+          _full: makePoints(data.topreward.normalized_progress),
+          data: [],
+          yAxisID: 'y',
+          borderColor: '#DC2828', backgroundColor: 'rgba(220,40,40,0.10)',
+          borderWidth: 2.5, pointRadius: 4, pointHoverRadius: 6,
+          pointBackgroundColor: '#DC2828', tension: 0, fill: true, spanGaps: false,
+        });
+      }
+      if (data.robometer) {
+        datasets.push({
+          label: 'Robometer',
+          _full: makePoints(data.robometer.progress_scores),
+          data: [],
+          yAxisID: 'y',
+          borderColor: '#A064DC', backgroundColor: 'rgba(160,100,220,0.07)',
+          borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
+          pointBackgroundColor: '#A064DC', borderDash: [8, 3],
+          tension: 0, fill: true, spanGaps: false,
+        });
+      }
+      if (data.roboreward) {
+        datasets.push({
+          label: 'RoboReward',
+          _full: makePoints(data.roboreward.progress_scores),
+          data: [],
+          yAxisID: 'y',
+          borderColor: '#F5761A', backgroundColor: 'rgba(245,118,26,0.07)',
+          borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
+          pointBackgroundColor: '#F5761A', borderDash: [5, 3],
+          tension: 0, fill: true, spanGaps: false,
+        });
+      }
+      if (data.gvl) {
+        datasets.push({
+          label: `GVL`,
+          _full: makePoints(data.gvl.progress_scores),
+          data: [],
+          yAxisID: 'y',
+          borderColor: '#4A90D9', backgroundColor: 'rgba(74,144,217,0.08)',
+          borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
+          pointBackgroundColor: '#4A90D9', borderDash: [6, 3],
+          tension: 0, fill: true, spanGaps: false,
+        });
+      }
+      if (data.bruteforce_vlm) {
+        datasets.push({
+          label: 'BruteforceVLM',
+          _full: makePoints(data.bruteforce_vlm.progress_scores),
+          data: [],
+          yAxisID: 'y',
+          borderColor: '#4AC48A', backgroundColor: 'rgba(74,196,138,0.07)',
+          borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
+          pointBackgroundColor: '#4AC48A', borderDash: [3, 3],
+          tension: 0, fill: true, spanGaps: false,
+        });
+      }
+      if (data.robodopamine) {
+        datasets.push({
+          label: 'RoboDopamine',
+          _full: makePoints(data.robodopamine.progress_scores),
+          data: [],
+          yAxisID: 'y',
+          borderColor: '#FF1493', backgroundColor: 'rgba(255,20,147,0.07)',
+          borderWidth: 2.5, pointRadius: 4, pointHoverRadius: 6,
+          pointBackgroundColor: '#FF1493', borderDash: [4, 4],
+          tension: 0, fill: true, spanGaps: false,
+        });
+      }
 
-      {/* Error */}
-      {phase === 'error' && (
-        <div className="center-panel">
-          <div className="error-box">
-            <p style={{ marginBottom: 8, fontSize: 16 }}>⚠ Error</p>
-            {error}
+      const titleText = data.instruction ? `"${data.instruction}"` : null;
+
+      return new Chart(canvas, {
+        type: 'line',
+        plugins: [vLinePlugin],
+        data: { datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          animation: false, parsing: false, normalized: true,
+          scales: {
+            x: {
+              type: 'linear', min: 0, max: 1,
+              title: { display: true, text: 'Normalised Time', color: '#7777a0', font: { size: 12 } },
+              ticks: { color: '#6666a0', stepSize: 0.1, maxRotation: 0 },
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              border: { color: 'rgba(255,255,255,0.10)' },
+            },
+            y: {
+              type: 'linear', min: 0, max: 1,
+              title: { display: true, text: 'Progress Score (0–1)', color: '#7777a0', font: { size: 12 } },
+              ticks: { color: '#6666a0', stepSize: 0.1 },
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              border: { color: 'rgba(255,255,255,0.10)' },
+            },
+
+          },
+          plugins: {
+            legend: { labels: { color: '#c0c0e0', font: { size: 13 }, usePointStyle: true, padding: 16 } },
+            title: titleText
+              ? { display: true, text: titleText, color: '#8888b0', font: { size: 13, style: 'italic' }, padding: { top: 2, bottom: 6 } }
+              : { display: false },
+            tooltip: {
+              mode: 'index', intersect: false,
+              backgroundColor: 'rgba(10,10,28,0.92)',
+              titleColor: '#c0c0e8', bodyColor: '#9090c0',
+              borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+              callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(3)}` },
+            },
+          },
+          interaction: { mode: 'index', intersect: false },
+        },
+      });
+    }
+
+    /* ── App ── */
+    function App() {
+      // phase: 'loading' | 'select' | 'viewer' | 'error'
+      const [phase, setPhase] = useState('loading');
+      const [pairs, setPairs] = useState([]);
+      const [error, setError] = useState('');
+      const [activePair, setActivePair] = useState(null);
+      const [data, setData] = useState(null);
+
+      const videoRef = useRef(null);
+      const canvasRef = useRef(null);
+      const chartRef = useRef(null);
+      const rafRef = useRef(null);
+      const dataRef = useRef(null);
+      dataRef.current = data;  // keep fresh in RAF closure
+
+      /* Scan on mount */
+      useEffect(() => {
+        scanPairs()
+          .then(found => {
+            setPairs(found);
+            if (found.length === 0) {
+              setError('No matching .mp4 / .json pairs found in viewer_files/');
+              setPhase('error');
+            } else {
+              setPhase('select');
+            }
+          })
+          .catch(err => { setError(err.message); setPhase('error'); });
+      }, []);
+
+      /* Load a pair */
+      const loadPair = async pair => {
+        try {
+          const res = await fetch(pair.json, { cache: 'no-store' });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const d = await res.json();
+          setData(d);
+          setActivePair(pair);
+          setPhase('viewer');
+        } catch (err) {
+          setError(`Failed to load ${pair.name}: ${err.message}`);
+          setPhase('error');
+        }
+      };
+
+      const goBack = () => {
+        if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
+        setData(null);
+        setActivePair(null);
+        setPhase('select');
+      };
+
+      /* Auto-play video when a pair is loaded */
+      useEffect(() => {
+        if (!activePair || !videoRef.current) return;
+        const video = videoRef.current;
+        const play = () => video.play().catch(() => { });
+        video.addEventListener('canplay', play, { once: true });
+        return () => video.removeEventListener('canplay', play);
+      }, [activePair]);
+
+      /* Build/rebuild chart when data arrives */
+      useEffect(() => {
+        if (!data || !canvasRef.current) return;
+        if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
+        chartRef.current = buildChart(canvasRef.current, data);
+        return () => { if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; } };
+      }, [data]);
+
+      /* Continuous RAF loop — reads live refs */
+      useEffect(() => {
+        let lastT = -1;
+        const tick = () => {
+          const chart = chartRef.current;
+          const video = videoRef.current;
+          const d = dataRef.current;
+          if (chart && video && d) {
+            const dur = video.duration;
+            const t = isFinite(dur) && dur > 0 ? video.currentTime / dur : 0;
+            if (t !== lastT) {
+              lastT = t;
+              chart._videoT = t;
+              chart.data.datasets.forEach(ds => {
+                if (!ds._full || ds._full.length === 0) return;
+                const full = ds._full;
+                const N = full.length;
+                if (N === 1) { ds.data = [full[0]]; return; }
+                const tScaled = t * (N - 1);
+                const idx = Math.min(Math.floor(tScaled), N - 1);
+                const frac = tScaled - idx;
+                const visible = full.slice(0, idx + 1);
+                if (idx < N - 1 && frac > 0.001) {
+                  const p0 = full[idx], p1 = full[idx + 1];
+                  visible.push({ x: p0.x + frac * (p1.x - p0.x), y: p0.y + frac * (p1.y - p0.y) });
+                }
+                ds.data = visible;
+              });
+              chart.update('none');
+            }
+          }
+          rafRef.current = requestAnimationFrame(tick);
+        };
+        rafRef.current = requestAnimationFrame(tick);
+        return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+      }, []);
+
+      /* ── Render ── */
+      return (
+        <>
+          <div className="header">
+            <h1>RewardScope</h1>
+            <span className="header-badge">Reward Visualiser</span>
+            {activePair && data?.instruction && (
+              <span className="header-sub">"{data.instruction}"</span>
+            )}
           </div>
-          <p className="panel-subtitle">
-            Put paired files in <code>viewer_files/</code> and create a manifest:<br />
-            <code>viewer_files/manifest.json</code> → <code>["run1", "run2"]</code><br /><br />
-            Generate JSON with:<br />
-            <code>python run_rewards.py --video … --instruction "…" --save-json viewer_files/run1.json</code>
-          </p>
-          {pairs.length > 0 && (
-            <button className="back-btn" style={{ position: 'static', marginTop: 8 }}
-                    onClick={() => setPhase('select')}>
-              ← Back to selection
-            </button>
-          )}
-        </div>
-      )}
 
-      {/* Pair selection */}
-      {phase === 'select' && (
-        <div className="center-panel">
-          <p className="panel-title">Choose a visualisation</p>
-          <div className="pairs-grid">
-            {pairs.map(pair => (
-              <div key={pair.name} className="pair-card" onClick={() => loadPair(pair)}>
-                <div className="pair-name">{pair.name}</div>
-                {pair.instruction && (
-                  <div className="pair-instruction">"{pair.instruction}"</div>
-                )}
-                <div className="pair-meta">
-                  {pair.hasTopreward  && <span className="pair-chip orange">TOPReward{pair.toprewardModel && <span className="chip-model"> · {pair.toprewardModel}</span>}</span>}
-                  {pair.hasGvl        && <span className="pair-chip blue">GVL{pair.gvlModel && <span className="chip-model"> · {pair.gvlModel}</span>}</span>}
-                  {pair.hasBruteforce && <span className="pair-chip green">BruteforceVLM{pair.bruteforceModel && <span className="chip-model"> · {pair.bruteforceModel}</span>}</span>}
-                  {pair.hasRoboreward  && <span className="pair-chip pumpkin">RoboReward{pair.roborewardModel && <span className="chip-model"> · {pair.roborewardModel}</span>}</span>}
-                  {pair.hasRobometer  && <span className="pair-chip purple">Robometer{pair.robometerModel && <span className="chip-model"> · {pair.robometerModel}</span>}</span>}
-                  {pair.hasRobodopamine && <span className="pair-chip deeppink">RoboDopamine{pair.robodopamineModel && <span className="chip-model"> · {pair.robodopamineModel}</span>}</span>}
+          {/* Loading */}
+          {phase === 'loading' && (
+            <div className="center-panel">
+              <div className="spinner" />
+              <p className="panel-title" style={{ fontSize: 15, color: '#5555aa' }}>
+                Scanning viewer_files/…
+              </p>
+            </div>
+          )}
+
+          {/* Error */}
+          {phase === 'error' && (
+            <div className="center-panel">
+              <div className="error-box">
+                <p style={{ marginBottom: 8, fontSize: 16 }}>⚠ Error</p>
+                {error}
+              </div>
+              <p className="panel-subtitle">
+                Put paired files in <code>viewer_files/</code> and create a manifest:<br />
+                <code>viewer_files/manifest.json</code> → <code>["run1", "run2"]</code><br /><br />
+                Generate JSON with:<br />
+                <code>python run_rewards.py --video … --instruction "…" --save-json viewer_files/run1.json</code>
+              </p>
+              {pairs.length > 0 && (
+                <button className="back-btn" style={{ position: 'static', marginTop: 8 }}
+                  onClick={() => setPhase('select')}>
+                  ← Back to selection
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Pair selection */}
+          {phase === 'select' && (
+            <div className="center-panel">
+              <p className="panel-title">Choose a visualisation</p>
+              <div className="pairs-grid">
+                {pairs.map(pair => (
+                  <div key={pair.name} className="pair-card" onClick={() => loadPair(pair)}>
+                    <div className="pair-name">{pair.name}</div>
+                    {pair.instruction && (
+                      <div className="pair-instruction">"{pair.instruction}"</div>
+                    )}
+                    <div className="pair-meta">
+                      {pair.hasTopreward && <span className="pair-chip orange">TOPReward{pair.toprewardModel && <span className="chip-model"> · {pair.toprewardModel}</span>}</span>}
+                      {pair.hasGvl && <span className="pair-chip blue">GVL{pair.gvlModel && <span className="chip-model"> · {pair.gvlModel}</span>}</span>}
+                      {pair.hasBruteforce && <span className="pair-chip green">BruteforceVLM{pair.bruteforceModel && <span className="chip-model"> · {pair.bruteforceModel}</span>}</span>}
+                      {pair.hasRoboreward && <span className="pair-chip pumpkin">RoboReward{pair.roborewardModel && <span className="chip-model"> · {pair.roborewardModel}</span>}</span>}
+                      {pair.hasRobometer && <span className="pair-chip purple">Robometer{pair.robometerModel && <span className="chip-model"> · {pair.robometerModel}</span>}</span>}
+                      {pair.hasRobodopamine && <span className="pair-chip deeppink">RoboDopamine{pair.robodopamineModel && <span className="chip-model"> · {pair.robodopamineModel}</span>}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="panel-subtitle" style={{ marginTop: 8 }}>
+                Want to try your own videos? Run the script from the <a href="https://github.com/philfung/reward-scope" target="_blank" rel="noopener noreferrer" style={{ color: 'orange' }}>github repo</a>.
+              </p>
+            </div>
+          )}
+
+          {/* Viewer */}
+          {phase === 'viewer' && activePair && (
+            <div className="main-view">
+              <div className="video-section">
+                <video ref={videoRef} src={activePair.mp4} controls />
+              </div>
+              <div className="chart-section">
+                <div className="chart-wrapper">
+                  <canvas ref={canvasRef} />
                 </div>
               </div>
-            ))}
-          </div>
-          <p className="panel-subtitle" style={{ marginTop: 8 }}>
-            Want to try your own videos? Run the script from the <a href="https://github.com/philfung/reward-scope" target="_blank" rel="noopener noreferrer" style={{ color: 'orange' }}>github repo</a>.
-          </p>
-        </div>
-      )}
-
-      {/* Viewer */}
-      {phase === 'viewer' && activePair && (
-        <div className="main-view">
-          <div className="video-section">
-            <video ref={videoRef} src={activePair.mp4} controls />
-          </div>
-          <div className="chart-section">
-            <div className="chart-wrapper">
-              <canvas ref={canvasRef} />
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {phase === 'viewer' && (
-        <button className="back-btn" onClick={goBack}>← Back</button>
-      )}
-    </>
-  );
-}
+          {phase === 'viewer' && (
+            <button className="back-btn" onClick={goBack}>← Back</button>
+          )}
+        </>
+      );
+    }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-</script>
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
 </body>
+
 </html>
