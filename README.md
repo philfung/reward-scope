@@ -1,5 +1,5 @@
 # RewardScope 🎛️ #
-## A web tool to compare popular robot reward functions on your own manipulation videos. ##
+## A web tool to compare popular zero-shot reward functions on your own robot manipulation sensor videos. ##
 <img src="screenshots/example.gif">
 
 
@@ -54,3 +54,6 @@ Reward functions you can run on your videos:
    ./run_viewer.sh
    ```
 
+# TODOs
+
+- [ ] add speed comparison (relative time/cpu to run each reward function)
